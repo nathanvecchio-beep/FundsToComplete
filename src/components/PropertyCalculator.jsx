@@ -99,7 +99,12 @@ export default function PropertyCalculator({ propIndex }) {
     const rawBaseLoan = baseLoanOverride ? Number(baseLoanManual) : Math.round(pv * baseLvr / 100);
 
     // Stamp duty
-    const autoStampDuty = calculateStampDuty(stateCode, pv, firstHome, propertyType);
+    const autoStampDuty = calculateStampDuty(stateCode, pv, {
+      isFirstHome: firstHome,
+      isOwnerOccupier: purpose === 'Owner Occupied',
+      propertyType,
+      isForeignBuyer: foreignBuyer,
+    });
     const stampDuty = stampDutyOverride ? Number(stampDutyManual) : autoStampDuty;
     const stampDutyConc = stampDutyConcOverride ? Number(stampDutyConcManual) : 0;
     const netStampDuty = Math.max(0, stampDuty - stampDutyConc);
@@ -137,7 +142,7 @@ export default function PropertyCalculator({ propIndex }) {
   }, [
     propertyValue, baseLvrOverride, baseLvrManual, baseLoanOverride, baseLoanManual,
     totalLoanOverride, totalLoanManual, fundsOverride, fundsManual,
-    stateCode, firstHome, propertyType,
+    stateCode, firstHome, propertyType, purpose, foreignBuyer,
     stampDutyOverride, stampDutyManual, stampDutyConcOverride, stampDutyConcManual,
     govtChargesOn, feesOverride, feesManual,
     capLMI, overrideLMI, lmiManual, lmiWaived,
