@@ -14,7 +14,6 @@ const STATE_CODES = { 'New South Wales':'NSW','Victoria':'VIC','Queensland':'QLD
 const PROPERTY_TYPES = ['Established Home','New Home','Vacant Land','Off the Plan'];
 const PURPOSES = ['Owner Occupied','Investment'];
 const TRANS_TYPES = ['Purchase','Refinance','Construction'];
-
 const DEFAULT_FEES = 3000;
 const DEFAULT_RATE = 5.75;
 const DEFAULT_TERM = 30;
@@ -23,13 +22,13 @@ function fmt(n) {
   if (n == null || n === '') return '$0';
   return '$' + Math.round(Number(n)).toLocaleString();
 }
-function pct(n, dec = 2) {
-  if (n == null) return '0%';
+function fmtPct(n, dec = 2) {
+  if (!n) return '0.00%';
   return Number(n).toFixed(dec) + '%';
 }
 
-// Inline editable value field used in the summary bar
-function EditableSummaryField({ label, value, onChange, readOnly }) {
+// Inline editable cell in the summary bar
+function EditableCell({ label, value, onChange, readOnly, subtext }) {
   const [editing, setEditing] = useState(false);
   const [raw, setRaw] = useState('');
   const inputRef = useRef();
@@ -58,22 +57,19 @@ function EditableSummaryField({ label, value, onChange, readOnly }) {
           onChange={e => setRaw(e.target.value)}
           onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-          placeholder="0"
         />
       ) : (
-        <div
-          className={`sb-value ${!readOnly ? 'sb-value-editable' : ''}`}
-          onClick={start}
-        >
+        <div className={`sb-value ${!readOnly ? 'sb-value-editable' : ''}`} onClick={start}>
           {fmt(value)}
         </div>
       )}
+      {subtext && <div className="sb-subtext">{subtext}</div>}
     </div>
   );
 }
 
 export default function PropertyCalculator({ propIndex }) {
-  // Left panel
+  // ── Left panel ───────────────────────────────────────────────────────────
   const [state, setState] = useState('New South Wales');
   const [propertyType, setPropertyType] = useState('Established Home');
   const [purpose, setPurpose] = useState('Owner Occupied');
@@ -83,57 +79,74 @@ export default function PropertyCalculator({ propIndex }) {
   const [selfEmployed, setSelfEmployed] = useState(false);
   const [foreignBuyer, setForeignBuyer] = useState(false);
 
-  // LMI waiver
+  // ── LMI waivers ─────────────────────────────────────────────────────────
   const [lmiOpen, setLmiOpen] = useState(true);
   const [fhgScheme, setFhgScheme] = useState(false);
   const [profLmi, setProfLmi] = useState(false);
   const [famGuarantor, setFamGuarantor] = useState(false);
 
-  // Right panel inputs
+  // ── Core inputs ──────────────────────────────────────────────────────────
+  // Property value — single source of truth
   const [propertyValue, setPropertyValue] = useState(0);
-  const [fundsOverride, setFundsOverride] = useState(false);
-  const [fundsManual, setFundsManual] = useState(0);
+
+  // Base LVR — user can override, default 80%
   const [baseLvrOverride, setBaseLvrOverride] = useState(false);
   const [baseLvrManual, setBaseLvrManual] = useState(80);
+
+  // Base loan — user can override; default = pv × baseLvr
   const [baseLoanOverride, setBaseLoanOverride] = useState(false);
   const [baseLoanManual, setBaseLoanManual] = useState(0);
+
+  // Total loan — user can override; default = baseLoan + capitalisedLMI
+  // NOTE: overriding total loan also sets baseLoanManual so LMI re-derives correctly
   const [totalLoanOverride, setTotalLoanOverride] = useState(false);
   const [totalLoanManual, setTotalLoanManual] = useState(0);
 
-  // Repayment
+  // Funds required override
+  const [fundsOverride, setFundsOverride] = useState(false);
+  const [fundsManual, setFundsManual] = useState(0);
+
+  // ── Repayment ────────────────────────────────────────────────────────────
   const [rate, setRate] = useState(DEFAULT_RATE);
   const [term, setTerm] = useState(DEFAULT_TERM);
   const [ioTerm, setIoTerm] = useState(0);
 
-  // Breakdown
+  // ── LMI options ──────────────────────────────────────────────────────────
+  const [capLMI, setCapLMI] = useState(true);
+  const [lmiLender, setLmiLender] = useState('ING');
+  const [overrideLMI, setOverrideLMI] = useState(false);
+  const [lmiManualAmt, setLmiManualAmt] = useState(0);
+
+  // ── Breakdown ────────────────────────────────────────────────────────────
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [govtChargesOn, setGovtChargesOn] = useState(true);
   const [stampDutyOverride, setStampDutyOverride] = useState(false);
   const [stampDutyManual, setStampDutyManual] = useState(0);
   const [stampDutyConcOverride, setStampDutyConcOverride] = useState(false);
   const [stampDutyConcManual, setStampDutyConcManual] = useState(0);
-
-  // Fees
   const [feesOverride, setFeesOverride] = useState(false);
   const [feesManual, setFeesManual] = useState(DEFAULT_FEES);
   const [useDetailedFees, setUseDetailedFees] = useState(false);
   const [useDetailedFunds, setUseDetailedFunds] = useState(false);
 
-  // LMI fields
-  const [capLMI, setCapLMI] = useState(true);
-  const [lmiLender, setLmiLender] = useState('ING');
-  const [overrideLMI, setOverrideLMI] = useState(false);
-  const [lmiManual, setLmiManual] = useState(0);
-
   const stateCode = STATE_CODES[state] || 'NSW';
   const lmiWaived = fhgScheme || profLmi || famGuarantor;
 
-  // ── Computed ──────────────────────────────────────────────────────────────
-  const computed = useMemo(() => {
+  // ── All computation in one memo ──────────────────────────────────────────
+  const C = useMemo(() => {
     const pv = Number(propertyValue) || 0;
-    const baseLvr = baseLvrOverride ? Number(baseLvrManual) : 80;
-    const rawBaseLoan = baseLoanOverride ? Number(baseLoanManual) : Math.round(pv * baseLvr / 100);
 
+    // Base LVR
+    const baseLvr = baseLvrOverride ? Number(baseLvrManual) : 80;
+
+    // Base loan (before LMI)
+    const rawBaseLoan = baseLoanOverride
+      ? Number(baseLoanManual)
+      : totalLoanOverride
+        ? Number(totalLoanManual)   // if user typed total loan directly, treat as base loan until LMI is known
+        : Math.round(pv * baseLvr / 100);
+
+    // Stamp duty
     const autoStampDuty = calculateStampDuty(stateCode, pv, {
       isFirstHome: firstHome,
       isOwnerOccupier: purpose === 'Owner Occupied',
@@ -148,73 +161,98 @@ export default function PropertyCalculator({ propIndex }) {
     const mortgageReg = calculateMortgageRegistration(stateCode, rawBaseLoan);
     const totalGovt = govtChargesOn ? (netStampDuty + transferFee + mortgageReg) : 0;
 
-    const autoLmi = calculateLMI(rawBaseLoan, pv, lmiWaived);
-    const lmi = overrideLMI ? Number(lmiManual) : autoLmi;
+    // LMI — derived from rawBaseLoan vs propertyValue
+    const lmiResult = calculateLMI(rawBaseLoan, pv, lmiWaived, stateCode);
+    const lmiAuto = lmiResult.lmi;
+    const lmi = overrideLMI ? Number(lmiManualAmt) : lmiAuto;
     const capitalisedLmi = capLMI ? lmi : 0;
 
-    const totalLoan = totalLoanOverride
+    // Total loan — baseLoan + capitalised LMI (unless user has directly overridden total loan AND also overridden base loan)
+    const totalLoan = (totalLoanOverride && baseLoanOverride)
       ? Number(totalLoanManual)
       : rawBaseLoan + capitalisedLmi;
 
-    const totalLvr = pv > 0 ? (totalLoan / pv * 100) : 0;
+    // LVRs
+    const baseLvrCalc = pv > 0 ? (rawBaseLoan / pv * 100) : 0;
+    const totalLvr    = pv > 0 ? (totalLoan / pv * 100) : 0;
+
+    // Fees & funds
     const fees = feesOverride ? Number(feesManual) : DEFAULT_FEES;
     const totalFundsRequired = pv + totalGovt + fees + (capLMI ? 0 : lmi);
     const fundsRequired = fundsOverride ? Number(fundsManual) : totalFundsRequired;
+
     const repayment = calculateRepayment(totalLoan, rate, term, ioTerm);
 
     return {
-      pv, baseLvr, rawBaseLoan, totalLoan, totalLvr,
+      pv, baseLvr, baseLvrCalc, rawBaseLoan, totalLoan, totalLvr,
       stampDuty, stampDutyConc, netStampDuty, transferFee, mortgageReg, totalGovt,
-      lmi, capitalisedLmi, fees, fundsRequired, totalFundsRequired, repayment,
+      lmi, lmiResult, capitalisedLmi, fees, fundsRequired, repayment,
       lmiActive: lmi > 0 && !lmiWaived,
     };
   }, [
-    propertyValue, baseLvrOverride, baseLvrManual, baseLoanOverride, baseLoanManual,
-    totalLoanOverride, totalLoanManual, fundsOverride, fundsManual,
+    propertyValue,
+    baseLvrOverride, baseLvrManual,
+    baseLoanOverride, baseLoanManual,
+    totalLoanOverride, totalLoanManual,
+    fundsOverride, fundsManual,
     stateCode, firstHome, propertyType, purpose, foreignBuyer,
     stampDutyOverride, stampDutyManual, stampDutyConcOverride, stampDutyConcManual,
     govtChargesOn, feesOverride, feesManual,
-    capLMI, overrideLMI, lmiManual, lmiWaived,
+    capLMI, overrideLMI, lmiManualAmt, lmiWaived,
     rate, term, ioTerm,
   ]);
 
-  const { pv, baseLvr, rawBaseLoan, totalLoan, totalLvr,
+  const { pv, baseLvr, baseLvrCalc, rawBaseLoan, totalLoan, totalLvr,
     stampDuty, stampDutyConc, netStampDuty, transferFee, mortgageReg, totalGovt,
-    lmi, fees, fundsRequired, repayment, lmiActive, capitalisedLmi } = computed;
+    lmi, lmiResult, capitalisedLmi, fees, fundsRequired, repayment, lmiActive } = C;
 
   const contribution = Math.max(0, fundsRequired - totalLoan);
   const surplus = totalLoan - fundsRequired;
 
-  // Handle loan override from summary bar tap
-  const handleLoanEdit = (v) => {
-    setTotalLoanOverride(true);
-    setTotalLoanManual(v);
+  // ── Summary bar handlers ─────────────────────────────────────────────────
+  // Editing "Property Value" → clears all overrides so everything auto-recalculates
+  const handlePvEdit = (v) => {
+    setPropertyValue(v);
+    // Don't clear loan overrides — user may have deliberately set them
+  };
+
+  // Editing "Total Loan" in summary bar → sets base loan override (so LMI, LVRs all flow)
+  const handleTotalLoanEdit = (v) => {
+    setBaseLoanOverride(true);
+    setBaseLoanManual(v);
+    setTotalLoanOverride(false); // let total loan auto-compute (base + LMI)
   };
 
   return (
     <div>
       {/* ── Editable Summary Bar ── */}
       <div className="summary-bar-editable">
-        <EditableSummaryField
+        <EditableCell
           label="Property Value"
           value={pv}
-          onChange={setPropertyValue}
+          onChange={handlePvEdit}
+          subtext={pv > 0 ? `Base LVR ${fmtPct(baseLvrCalc, 1)}` : null}
         />
         <div className="sb-divider" />
-        <EditableSummaryField
+        <EditableCell
           label="Total Loan"
           value={totalLoan}
-          onChange={handleLoanEdit}
+          onChange={handleTotalLoanEdit}
+          subtext={lmiActive ? `incl. LMI ${fmt(lmi)}` : null}
         />
         <div className="sb-divider" />
         <div className="sb-editable-item">
           <div className="sb-label">Total LVR</div>
-          <div className="sb-value">{pct(totalLvr, 0)}</div>
+          <div className={`sb-value ${lmiActive ? 'sb-value-warning' : ''}`}>
+            {fmtPct(totalLvr, 1)}
+          </div>
+          <div className="sb-subtext">{lmiActive ? '⚠ LMI applies' : totalLvr > 0 ? '✓ No LMI' : ''}</div>
         </div>
         <div className="sb-divider" />
         <div className="sb-editable-item">
           <div className="sb-label">Funds Required</div>
           <div className="sb-value">{fundsRequired > 0 ? fmt(fundsRequired) : 'N/A'}</div>
+          <div className="sb-subtext">{contribution > 0 ? `Deposit needed: ${fmt(contribution)}` : ''}</div>
         </div>
       </div>
 
@@ -223,16 +261,18 @@ export default function PropertyCalculator({ propIndex }) {
         <div className="lmi-banner">
           <div className="lmi-banner-icon">⚠</div>
           <div className="lmi-banner-body">
-            <strong>LMI applies — {fmt(lmi)}</strong>
+            <strong>LMI applies — estimated {fmt(lmi)}</strong>
             <span className="lmi-banner-sub">
-              {capLMI
-                ? `Capitalised into loan (Base loan ${fmt(rawBaseLoan)} + LMI ${fmt(lmi)} = Total ${fmt(totalLoan)})`
-                : `Paid upfront — not added to loan`}
-              {' · '}LVR {pct(totalLvr, 1)} · Consider increasing deposit to reach 80% LVR to avoid LMI
+              LVR {fmtPct(totalLvr, 1)} &gt; 80% · Base premium {fmt(lmiResult.basePremium)}
+              {lmiResult.dutyOnPremium > 0 && ` + ${stateCode} stamp duty on premium ${fmt(lmiResult.dutyOnPremium)}`}
+              {' · '}{capLMI ? `Capitalised: base ${fmt(rawBaseLoan)} + LMI ${fmt(lmi)} = total loan ${fmt(totalLoan)}` : 'Paid upfront — not added to loan'}
             </span>
+            {lmiResult.warnings?.length > 0 && (
+              <span className="lmi-banner-warn">{lmiResult.warnings.join(' ')}</span>
+            )}
           </div>
           <div className="lmi-banner-toggle">
-            <span style={{ fontSize: '0.75rem', color: 'inherit', marginRight: 6 }}>Capitalise</span>
+            <span style={{ fontSize: '0.75rem', marginRight: 6 }}>Capitalise</span>
             <Toggle checked={capLMI} onChange={setCapLMI} />
           </div>
         </div>
@@ -241,7 +281,7 @@ export default function PropertyCalculator({ propIndex }) {
       {/* ── Main calculator card ── */}
       <div className="property-card">
         <div className="calc-grid">
-          {/* LEFT */}
+          {/* LEFT — loan scenario options */}
           <div>
             <SelectField label="Property State" value={state} onChange={setState}
               options={STATES.map(s => ({ value: s, label: s }))} />
@@ -272,7 +312,7 @@ export default function PropertyCalculator({ propIndex }) {
                 </div>
                 <div className="bool-item">
                   Professional LMI Waiver
-                  <span className="info-icon" title="Available for certain professionals: doctors, lawyers, accountants">i</span>
+                  <span className="info-icon" title="Doctors, lawyers, accountants may qualify for LMI waiver at 90% LVR">i</span>
                   <Toggle checked={profLmi} onChange={setProfLmi} />
                 </div>
                 <div className="bool-item">
@@ -282,16 +322,18 @@ export default function PropertyCalculator({ propIndex }) {
                 </div>
               </div>
             )}
-
             <div className="lender-row">
               <div className="lender-logo">ING</div>
               ING
             </div>
           </div>
 
-          {/* RIGHT */}
+          {/* RIGHT — calculated loan figures */}
           <div>
+            {/* Property Value */}
             <CurrencyField label="Property Value" value={pv} onChange={setPropertyValue} />
+
+            {/* Funds Required */}
             <CurrencyField
               label="Funds Required"
               value={fundsRequired}
@@ -299,35 +341,58 @@ export default function PropertyCalculator({ propIndex }) {
               autoCalc overrideActive={fundsOverride}
               onToggleOverride={setFundsOverride}
             />
-            <PercentField label="Base LVR" value={pct(baseLvr, 0).replace('%', '')} />
-            <PercentField label="Total LVR" value={pct(totalLvr, 2).replace('%', '')} />
+
+            {/* Base LVR — shows actual computed LVR (pv × 80% default) */}
+            <div className="field has-toggle">
+              <label>Base LVR</label>
+              {baseLvrOverride
+                ? <input type="number" value={baseLvrManual}
+                    onChange={e => setBaseLvrManual(Number(e.target.value))}
+                    style={{ borderColor: 'var(--accent)' }} />
+                : <input type="text" value={fmtPct(baseLvrCalc, 2)} readOnly />
+              }
+              <div className="field-right">
+                {!baseLvrOverride && <span className="autocalc-badge">AUTOCALCULATED</span>}
+                <Toggle checked={baseLvrOverride} onChange={v => { setBaseLvrOverride(v); if (!v) { setBaseLoanOverride(false); } }} />
+              </div>
+            </div>
+
+            {/* Total LVR */}
+            <div className="field">
+              <label>Total LVR</label>
+              <input type="text" value={fmtPct(totalLvr, 2)} readOnly
+                style={lmiActive ? { borderColor: 'var(--lmi-border)', color: 'var(--lmi-text)' } : {}} />
+            </div>
+
+            {/* Base Loan */}
             <CurrencyField
               label="Base Loan Amount"
               value={rawBaseLoan}
-              onChange={setBaseLoanManual}
-              autoCalc overrideActive={baseLoanOverride}
-              onToggleOverride={setBaseLoanOverride}
+              onChange={v => { setBaseLoanOverride(true); setBaseLoanManual(v); }}
+              autoCalc
+              overrideActive={baseLoanOverride}
+              onToggleOverride={v => { setBaseLoanOverride(v); if (!v) setTotalLoanOverride(false); }}
             />
 
-            {/* LMI inline row — visible in form when LMI applies */}
+            {/* LMI inline row */}
             {lmiActive && (
               <div className="lmi-inline-row">
-                <div className="lmi-inline-label">
-                  + LMI {capLMI ? '(capitalised)' : '(upfront)'}
-                </div>
+                <div className="lmi-inline-label">+ LMI {capLMI ? '(capitalised into loan)' : '(paid upfront)'}</div>
                 <div className="lmi-inline-value">{fmt(lmi)}</div>
               </div>
             )}
 
+            {/* Total Loan */}
             <CurrencyField
               label="Total Loan Amount"
               value={totalLoan}
-              onChange={setTotalLoanManual}
-              autoCalc overrideActive={totalLoanOverride}
-              onToggleOverride={setTotalLoanOverride}
+              onChange={v => { setTotalLoanOverride(true); setBaseLoanOverride(true); setTotalLoanManual(v); setBaseLoanManual(v); }}
+              autoCalc
+              overrideActive={totalLoanOverride && baseLoanOverride}
+              onToggleOverride={v => { setTotalLoanOverride(v); setBaseLoanOverride(v); }}
             />
 
-            {/* Repayment bar */}
+            {/* Repayment */}
             <div className="repayment-bar">
               <div className="rep-field">
                 <label>Rate %</label>
@@ -350,7 +415,7 @@ export default function PropertyCalculator({ propIndex }) {
         </div>
       </div>
 
-      {/* ── Math Breakdown ── */}
+      {/* ── Breakdown ── */}
       <button className="breakdown-toggle-btn" onClick={() => setShowBreakdown(v => !v)}>
         <span className={`chevron ${showBreakdown ? 'open' : ''}`} style={{ marginRight: 6 }}>▲</span>
         {showBreakdown ? 'Hide' : 'Show'} detailed breakdown of the maths
@@ -361,29 +426,36 @@ export default function PropertyCalculator({ propIndex }) {
           {/* LMI */}
           <div className="breakdown-card">
             <h3>LMI</h3>
-            {lmiWaived && (
-              <div className="lmi-waived-badge">✓ LMI Waived</div>
-            )}
-            {!lmiWaived && lmi === 0 && pv > 0 && (
-              <div className="lmi-none-badge">✓ No LMI (LVR ≤ 80%)</div>
-            )}
+            {lmiWaived && <div className="lmi-waived-badge">✓ LMI Waived</div>}
+            {!lmiWaived && lmi === 0 && pv > 0 && <div className="lmi-none-badge">✓ No LMI — LVR ≤ 80%</div>}
             {lmiActive && (
               <div className="lmi-active-breakdown">
                 <div className="lmi-breakdown-row">
                   <span>Base Loan</span><span>{fmt(rawBaseLoan)}</span>
                 </div>
-                <div className="lmi-breakdown-row lmi-highlight-row">
-                  <span>LMI Premium</span><span>{fmt(lmi)}</span>
+                <div className="lmi-breakdown-row">
+                  <span>LVR</span><span>{fmtPct(totalLvr, 2)}</span>
                 </div>
+                <div className="lmi-breakdown-row lmi-highlight-row">
+                  <span>Base Premium ({(lmiResult.rate * 100).toFixed(4)}%)</span>
+                  <span>{fmt(lmiResult.basePremium)}</span>
+                </div>
+                {lmiResult.dutyOnPremium > 0 && (
+                  <div className="lmi-breakdown-row">
+                    <span>Stamp Duty on Premium ({stateCode})</span>
+                    <span>{fmt(lmiResult.dutyOnPremium)}</span>
+                  </div>
+                )}
                 {capLMI && (
                   <div className="lmi-breakdown-row lmi-total-row">
-                    <span>Total Loan (inc LMI)</span><span>{fmt(totalLoan)}</span>
+                    <span>Total Loan (inc. LMI)</span><span>{fmt(totalLoan)}</span>
                   </div>
                 )}
               </div>
             )}
-            <div className="field" style={{ marginTop: 12 }}>
-              <label>LMI Amount</label>
+
+            <div className="field" style={{ marginTop: 10 }}>
+              <label>Total LMI Cost</label>
               <input type="text" value={fmt(lmi)} readOnly />
             </div>
             <div className="bool-item" style={{ marginBottom: 10 }}>
@@ -397,24 +469,28 @@ export default function PropertyCalculator({ propIndex }) {
             {overrideLMI && (
               <div className="field">
                 <label>Override Amount</label>
-                <input type="number" value={lmiManual} onChange={e => setLmiManual(Number(e.target.value))} placeholder="$0" />
+                <input type="number" value={lmiManualAmt} onChange={e => setLmiManualAmt(Number(e.target.value))} placeholder="$0" />
               </div>
             )}
+
+            {/* Disclaimer */}
+            <div className="lmi-disclaimer">
+              <strong>Estimate only.</strong> LMI premiums are not publicly disclosed by individual banks. This uses an industry-representative rate table — actual premium may differ. Obtain a formal quote from your lender at application.
+              {lmiResult.warnings?.length > 0 && <div style={{ marginTop: 4, color: 'var(--lmi-text)' }}>{lmiResult.warnings.join(' ')}</div>}
+            </div>
           </div>
 
           {/* Govt Charges */}
           <div className="breakdown-card">
             <h3>
               Govt Charges
-              {stateCode === 'NT' && <span className="info-icon" style={{ marginLeft: 6 }} title="NT fees are approximate — verify with NT Land Titles Office.">i</span>}
-              {stateCode === 'VIC' && <span className="info-icon" style={{ marginLeft: 6 }} title="VIC transfer fee is approximate — confirm via Land Use Victoria.">i</span>}
+              {stateCode === 'NT' && <span className="info-icon" style={{ marginLeft: 6 }} title="NT fees approximate — verify with NT Land Titles Office">i</span>}
+              {stateCode === 'VIC' && <span className="info-icon" style={{ marginLeft: 6 }} title="VIC transfer fee approximate — confirm via Land Use Victoria">i</span>}
             </h3>
             <div className="field has-toggle">
               <label>Total Govt Charges</label>
               <input type="text" value={fmt(totalGovt)} readOnly />
-              <div className="field-right">
-                <Toggle checked={govtChargesOn} onChange={setGovtChargesOn} />
-              </div>
+              <div className="field-right"><Toggle checked={govtChargesOn} onChange={setGovtChargesOn} /></div>
             </div>
             <div className="field">
               <label>Base Stamp Duty</label>
@@ -436,11 +512,11 @@ export default function PropertyCalculator({ propIndex }) {
             </div>
             <div className="field">
               <label>Transfer (Title Registration) Fee</label>
-              <input type="text" value={`$${computed.transferFee.toFixed(2)}`} readOnly />
+              <input type="text" value={`$${C.transferFee.toFixed(2)}`} readOnly />
             </div>
             <div className="field">
               <label>Mortgage Registration Fee</label>
-              <input type="text" value={`$${computed.mortgageReg.toFixed(2)}`} readOnly />
+              <input type="text" value={`$${C.mortgageReg.toFixed(2)}`} readOnly />
             </div>
           </div>
 
@@ -454,14 +530,12 @@ export default function PropertyCalculator({ propIndex }) {
             <div className="bool-item" style={{ marginBottom: 10, fontSize: '0.875rem' }}>
               Use Detailed <Toggle checked={useDetailedFunds} onChange={setUseDetailedFunds} />
             </div>
-            {useDetailedFunds && (
-              <>
-                <div className="field"><label>Purchase Amount</label><input type="text" value={fmt(pv)} readOnly /></div>
-                <div className="field"><label>Government Charges</label><input type="text" value={fmt(totalGovt)} readOnly /></div>
-                <div className="field"><label>Legal &amp; Bank Fees</label><input type="text" value={fmt(fees)} readOnly /></div>
-                {!capLMI && lmi > 0 && <div className="field"><label>LMI (upfront)</label><input type="text" value={fmt(lmi)} readOnly /></div>}
-              </>
-            )}
+            {useDetailedFunds && (<>
+              <div className="field"><label>Purchase Amount</label><input type="text" value={fmt(pv)} readOnly /></div>
+              <div className="field"><label>Government Charges</label><input type="text" value={fmt(totalGovt)} readOnly /></div>
+              <div className="field"><label>Legal &amp; Bank Fees</label><input type="text" value={fmt(fees)} readOnly /></div>
+              {!capLMI && lmi > 0 && <div className="field"><label>LMI (upfront)</label><input type="text" value={fmt(lmi)} readOnly /></div>}
+            </>)}
           </div>
 
           {/* Fees */}
@@ -480,33 +554,26 @@ export default function PropertyCalculator({ propIndex }) {
             <div className="bool-item" style={{ fontSize: '0.875rem', marginBottom: 10 }}>
               Use Detailed <Toggle checked={useDetailedFees} onChange={setUseDetailedFees} />
             </div>
-            {useDetailedFees && (
-              <>
-                <div className="field" style={{ marginTop: 8 }}><label>Legal Fees</label><input type="number" defaultValue={1500} /></div>
-                <div className="field"><label>Bank Fees</label><input type="number" defaultValue={1000} /></div>
-                <div className="field"><label>Other</label><input type="number" defaultValue={500} /></div>
-              </>
-            )}
+            {useDetailedFees && (<>
+              <div className="field" style={{ marginTop: 8 }}><label>Legal Fees</label><input type="number" defaultValue={1500} /></div>
+              <div className="field"><label>Bank Fees</label><input type="number" defaultValue={1000} /></div>
+              <div className="field"><label>Other</label><input type="number" defaultValue={500} /></div>
+            </>)}
           </div>
         </div>
       )}
 
       {/* ── Summary Table ── */}
       <div className="summary-table-card">
-        <div className="summary-table-header">
-          <h2>Summary</h2>
-        </div>
+        <div className="summary-table-header"><h2>Summary</h2></div>
         <table className="stbl">
           <thead>
-            <tr>
-              <th style={{ width: '50%' }}></th>
-              <th>Funds Pos {propIndex + 1}</th>
-            </tr>
+            <tr><th style={{ width: '50%' }}></th><th>Funds Pos {propIndex + 1}</th></tr>
           </thead>
           <tbody>
             <tr><td>Property Value</td><td>{fmt(pv)}</td></tr>
-            <tr><td>LVR</td><td>{pct(totalLvr)}</td></tr>
-            {lmiActive && <tr><td>LMI Premium</td><td style={{ color: 'var(--danger)' }}>{fmt(lmi)}</td></tr>}
+            <tr><td>LVR</td><td>{fmtPct(totalLvr)}</td></tr>
+            {lmiActive && <tr><td>LMI Applicable</td><td style={{ color: 'var(--lmi-text)', fontWeight: 600 }}>Yes — {fmt(lmi)}</td></tr>}
             <tr className="row-header"><td colSpan={2}>Funds Required</td></tr>
             <tr><td>Purchase Amount</td><td>{fmt(pv)}</td></tr>
             <tr><td>Government Charges</td><td>{fmt(totalGovt)}</td></tr>
@@ -515,7 +582,7 @@ export default function PropertyCalculator({ propIndex }) {
             <tr className="row-total"><td>Total Funds Required</td><td>{fmt(fundsRequired)}</td></tr>
             <tr className="row-header"><td colSpan={2}>Funds Available</td></tr>
             <tr><td>Base Loan Amount</td><td>{fmt(rawBaseLoan)}</td></tr>
-            {capLMI && lmi > 0 && <tr><td>LMI (capitalised)</td><td>{fmt(lmi)}</td></tr>}
+            {capLMI && lmi > 0 && <tr><td>LMI (capitalised into loan)</td><td>{fmt(lmi)}</td></tr>}
             <tr><td>Proposed Loan Amount</td><td>{fmt(totalLoan)}</td></tr>
             <tr><td>Contribution Required</td><td className={contribution > 0 ? 'negative' : 'positive'}>{fmt(contribution)}</td></tr>
             <tr className="row-total"><td>Total Funds Available</td><td>{fmt(totalLoan + contribution)}</td></tr>

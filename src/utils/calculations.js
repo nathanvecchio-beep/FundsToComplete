@@ -377,17 +377,72 @@ export function calculateMortgageRegistration(stateCode, loanAmount) {
   }
 }
 
-// ── LMI (simplified tier estimate) ──────────────────────────────────────────
-export function calculateLMI(loanAmount, propertyValue, lmiWaived) {
-  if (lmiWaived || !loanAmount || !propertyValue) return 0;
-  const lvr = loanAmount / propertyValue;
-  if (lvr <= 0.8) return 0;
-  let rate;
-  if (lvr <= 0.85)      rate = 0.0077;
-  else if (lvr <= 0.9)  rate = 0.0158;
-  else if (lvr <= 0.95) rate = 0.0374;
-  else                   rate = 0.0449;
-  return Math.round(loanAmount * rate);
+// ── LMI Estimator (real industry rate table) ─────────────────────────────────
+// Source: Home Loan Experts published rate table ("one of our lenders" — bank
+// identity withheld at the bank's request), updated 18 May 2026.
+// Rows = LVR bands (upper bound %, 1% wide starting at 80.01%)
+// Cols = Loan size bands (upper bound $)
+//
+// IMPORTANT DISCLAIMER: LMI premiums are NOT publicly published on a per-bank
+// basis. This uses an industry-representative table. No bank publicly discloses
+// its exact rate — get a real quote from the lender at application time.
+
+const LVR_BANDS  = [81,82,83,84,85,86,87,88,89,90,91,92,93,94,95];
+const LOAN_BANDS = [300000, 500000, 600000, 750000, 1000000];
+
+const LMI_RATE_TABLE = [
+  [0.00475, 0.00568, 0.00904, 0.00904, 0.00913], // 80.01–81%
+  [0.00485, 0.00568, 0.00904, 0.00904, 0.00913], // 81.01–82%
+  [0.00596, 0.00699, 0.00932, 0.01090, 0.01109], // 82.01–83%
+  [0.00662, 0.00829, 0.00960, 0.01090, 0.01146], // 83.01–84%
+  [0.00727, 0.00969, 0.01165, 0.01333, 0.01407], // 84.01–85%
+  [0.00876, 0.01081, 0.01258, 0.01407, 0.01463], // 85.01–86%
+  [0.00932, 0.01146, 0.01407, 0.01631, 0.01733], // 86.01–87%
+  [0.01062, 0.01305, 0.01463, 0.01631, 0.01752], // 87.01–88%
+  [0.01295, 0.01621, 0.01948, 0.02218, 0.02395], // 88.01–89%
+  [0.01463, 0.01873, 0.02180, 0.02367, 0.02516], // 89.01–90%
+  [0.02013, 0.02618, 0.03513, 0.03783, 0.03820], // 90.01–91%
+  [0.02013, 0.02674, 0.03569, 0.03867, 0.03932], // 91.01–92%
+  [0.02330, 0.03028, 0.03802, 0.04081, 0.04156], // 92.01–93%
+  [0.02376, 0.03028, 0.03802, 0.04286, 0.04324], // 93.01–94%
+  [0.02609, 0.03345, 0.03998, 0.04613, 0.04603], // 94.01–95%
+];
+
+// Stamp duty on the LMI premium — legislated per state, verified 26 June 2026
+const LMI_STAMP_DUTY = { NSW: 0.00, VIC: 0.10, QLD: 0.09, SA: 0.11, WA: 0.10, TAS: 0.10, ACT: 0.00, NT: 0.10 };
+
+function lvrBandIdx(lvrPct) {
+  if (lvrPct <= 80) return -1;
+  for (let i = 0; i < LVR_BANDS.length; i++) {
+    if (lvrPct <= LVR_BANDS[i]) return i;
+  }
+  return LVR_BANDS.length - 1;
+}
+function loanBandIdx(loan) {
+  for (let j = 0; j < LOAN_BANDS.length; j++) {
+    if (loan <= LOAN_BANDS[j]) return j;
+  }
+  return LOAN_BANDS.length - 1;
+}
+
+export function calculateLMI(loanAmount, propertyValue, lmiWaived, stateCode = 'NSW') {
+  if (lmiWaived || !loanAmount || !propertyValue) return { lmi: 0, basePremium: 0, dutyOnPremium: 0, rate: 0, warnings: [] };
+  const lvrPct = (loanAmount / propertyValue) * 100;
+  if (lvrPct <= 80) return { lmi: 0, basePremium: 0, dutyOnPremium: 0, rate: 0, warnings: [] };
+
+  const warnings = [];
+  if (lvrPct > 95) warnings.push('LVR exceeds 95% — most lenders will not lend above this. Estimate uses the 94–95% band.');
+  if (loanAmount > 1000000) warnings.push('Loan exceeds $1M — rate table tops out at the $750k–$1M band. Actual premium may be higher.');
+
+  const i = lvrBandIdx(lvrPct);
+  const j = loanBandIdx(loanAmount);
+  const rate = LMI_RATE_TABLE[i][j];
+  const basePremium = Math.round(loanAmount * rate * 100) / 100;
+  const dutyRate = LMI_STAMP_DUTY[stateCode] ?? 0;
+  const dutyOnPremium = Math.round(basePremium * dutyRate * 100) / 100;
+  const lmi = Math.round(basePremium + dutyOnPremium);
+
+  return { lmi, basePremium, dutyOnPremium, rate, lvrPct: Math.round(lvrPct * 100) / 100, warnings };
 }
 
 // ── Repayment ────────────────────────────────────────────────────────────────
