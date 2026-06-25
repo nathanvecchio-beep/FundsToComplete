@@ -356,7 +356,21 @@ export default function PropertyCalculator({ propIndex }) {
                 <Toggle checked={govtChargesOn} onChange={setGovtChargesOn} />
               </div>
             </div>
-            <div style={{ marginBottom: 10, fontWeight: 600, fontSize: '0.875rem' }}>Breakdown</div>
+            <div style={{ marginBottom: 10, fontWeight: 600, fontSize: '0.875rem' }}>
+              Breakdown
+              {stateCode === 'NT' && (
+                <span className="info-icon" style={{ marginLeft: 6 }}
+                  title="NT transfer and mortgage registration fees are approximate — verify with the NT Land Titles Office or a local conveyancer.">
+                  i
+                </span>
+              )}
+              {stateCode === 'VIC' && (
+                <span className="info-icon" style={{ marginLeft: 6 }}
+                  title="VIC transfer fee is approximate — confirm exact figure via Land Use Victoria's online calculator.">
+                  i
+                </span>
+              )}
+            </div>
             <div className="field">
               <label>Base Stamp Duty</label>
               <input
@@ -376,12 +390,12 @@ export default function PropertyCalculator({ propIndex }) {
               />
             </div>
             <div className="field">
-              <label>Mortgage Registration</label>
-              <input type="text" value={fmt(computed.mortgageReg)} readOnly />
+              <label>Transfer (Title Registration) Fee</label>
+              <input type="text" value={`$${computed.transferFee.toFixed(2)}`} readOnly />
             </div>
             <div className="field">
-              <label>Transfer Fee</label>
-              <input type="text" value={fmt(computed.transferFee)} readOnly />
+              <label>Mortgage Registration Fee</label>
+              <input type="text" value={`$${computed.mortgageReg.toFixed(2)}`} readOnly />
             </div>
           </div>
 

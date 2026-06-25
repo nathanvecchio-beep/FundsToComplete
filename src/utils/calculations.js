@@ -289,19 +289,74 @@ export function calculateStampDuty(stateCode, propertyValue, opts = {}) {
   return Math.round(duty);
 }
 
-// ── Transfer / Mortgage Registration fees ────────────────────────────────────
+// ── Transfer / Mortgage Registration fees (verified 26 June 2026) ────────────
+// Sources: au-government-fees-calculator.js + au-government-fees.json
+
+// WA: flat fee per consideration band
+const WA_TRANSFER_BANDS = [
+  { upTo: 85000,   fee: 216.60 },
+  { upTo: 120000,  fee: 226.60 },
+  { upTo: 200000,  fee: 246.60 },
+  { upTo: 300000,  fee: 266.60 },
+  { upTo: 400000,  fee: 286.60 },
+  { upTo: 500000,  fee: 306.60 },
+  { upTo: 600000,  fee: 326.60 },
+  { upTo: 700000,  fee: 346.60 },
+  { upTo: 800000,  fee: 366.60 },
+  { upTo: 900000,  fee: 386.60 },
+  { upTo: 1000000, fee: 406.60 },
+  { upTo: 1100000, fee: 426.60 },
+  { upTo: 1200000, fee: 446.60 },
+  { upTo: 1300000, fee: 466.60 },
+  { upTo: 1400000, fee: 486.60 },
+  { upTo: 1500000, fee: 506.60 },
+  { upTo: 1600000, fee: 526.60 },
+  { upTo: 1700000, fee: 546.60 },
+  { upTo: 1800000, fee: 566.60 },
+  { upTo: 1900000, fee: 586.60 },
+  { upTo: 2000000, fee: 606.60 },
+];
+
+function waTransferFee(v) {
+  for (const band of WA_TRANSFER_BANDS) {
+    if (v <= band.upTo) return band.fee;
+  }
+  return 606.60 + 20 * Math.ceil((v - 2000000) / 100000);
+}
+
+// SA: ad-valorem sliding scale (verified against official table)
+function saTransferFee(v) {
+  if (v <= 5000)  return 198.00;
+  if (v <= 20000) return 221.00;
+  if (v <= 40000) return 243.00;
+  const steps = Math.ceil(v / 10000) * 10000;
+  const stepsAbove40k = (steps - 40000) / 10000;
+  return Math.round((342.00 + 102.00 * (stepsAbove40k - 1)) * 100) / 100;
+}
+
+// QLD: base + per-$10k increment above $180k (FY2025-26 rates)
+function qldTransferFee(v) {
+  if (v <= 180000) return 238.14;
+  return Math.round((238.14 + 44.71 * Math.ceil((v - 180000) / 10000)) * 100) / 100;
+}
+
+// VIC: sliding scale capped at $3,607 (approximate — confirm via Land Use Victoria)
+function vicTransferFee(v) {
+  return Math.min(Math.round((101.50 + 2.34 * Math.ceil(v / 1000)) * 100) / 100, 3607);
+}
+
 export function calculateTransferFee(stateCode, propertyValue) {
   const v = Number(propertyValue) || 0;
   if (!v) return 0;
   switch (stateCode) {
-    case 'NSW': return Math.min(Math.max(Math.round(109 + Math.floor(v / 1000) * 3.4), 109), 50000);
-    case 'VIC': return Math.min(Math.max(Math.round(109 + Math.floor(v / 1000) * 2.34), 109), 150000);
-    case 'QLD': return Math.min(Math.round(600 + Math.floor(v / 10000) * 33), 3500);
-    case 'SA':  return Math.min(Math.round(163 + Math.floor(v / 5000) * 11), 15000);
-    case 'WA':  return Math.min(Math.round(168 + Math.floor(v / 100000) * 20), 1500);
-    case 'ACT': return 1230;
-    case 'NT':  return Math.min(Math.round(141 + Math.floor(v / 10000) * 12), 2000);
-    case 'TAS': return Math.min(Math.round(174 + Math.floor(v / 10000) * 14), 3000);
+    case 'NSW': return 175.70;
+    case 'VIC': return vicTransferFee(v);
+    case 'QLD': return qldTransferFee(v);
+    case 'WA':  return waTransferFee(v);
+    case 'SA':  return saTransferFee(v);
+    case 'TAS': return 250.21;
+    case 'ACT': return 479.00;
+    case 'NT':  return 156.00; // approximate — verify with NT Land Titles Office
     default: return 0;
   }
 }
@@ -310,14 +365,14 @@ export function calculateMortgageRegistration(stateCode, loanAmount) {
   const v = Number(loanAmount) || 0;
   if (!v) return 0;
   switch (stateCode) {
-    case 'NSW': return Math.min(Math.max(Math.round(109 + Math.floor(v / 1000) * 3.4), 109), 5000);
-    case 'VIC': return Math.min(Math.round(109 + Math.floor(v / 1000) * 2.34), 5000);
-    case 'QLD': return 194;
-    case 'SA':  return 163;
-    case 'WA':  return Math.min(Math.round(168 + Math.floor(v / 100000) * 5), 500);
-    case 'ACT': return 161;
-    case 'NT':  return 141;
-    case 'TAS': return 174;
+    case 'NSW': return 175.70;
+    case 'VIC': return 125.70; // approximate — confirm via Land Use Victoria
+    case 'QLD': return 238.14; // FY2025-26
+    case 'WA':  return 216.60;
+    case 'SA':  return 198.00;
+    case 'TAS': return 163.30;
+    case 'ACT': return 178.00;
+    case 'NT':  return 156.00; // approximate
     default: return 0;
   }
 }
