@@ -102,6 +102,10 @@ export default function PropertyCalculator({ propIndex }) {
   const [totalLoanOverride, setTotalLoanOverride] = useState(false);
   const [totalLoanManual, setTotalLoanManual] = useState(0);
 
+  // Deposit override — user enters deposit amount; base loan = pv - deposit
+  const [depositOverride, setDepositOverride] = useState(false);
+  const [depositManual, setDepositManual] = useState(0);
+
   // Funds required override
   const [fundsOverride, setFundsOverride] = useState(false);
   const [fundsManual, setFundsManual] = useState(0);
@@ -140,11 +144,14 @@ export default function PropertyCalculator({ propIndex }) {
     const baseLvr = baseLvrOverride ? Number(baseLvrManual) : 80;
 
     // Base loan (before LMI)
-    const rawBaseLoan = baseLoanOverride
-      ? Number(baseLoanManual)
-      : totalLoanOverride
-        ? Number(totalLoanManual)   // if user typed total loan directly, treat as base loan until LMI is known
-        : Math.round(pv * baseLvr / 100);
+    // Priority: depositOverride → baseLoanOverride → totalLoanOverride → auto (pv × baseLvr)
+    const rawBaseLoan = depositOverride
+      ? Math.max(0, pv - Number(depositManual))
+      : baseLoanOverride
+        ? Number(baseLoanManual)
+        : totalLoanOverride
+          ? Number(totalLoanManual)   // if user typed total loan directly, treat as base loan until LMI is known
+          : Math.round(pv * baseLvr / 100);
 
     // Stamp duty
     const autoStampDuty = calculateStampDuty(stateCode, pv, {
@@ -191,6 +198,7 @@ export default function PropertyCalculator({ propIndex }) {
     };
   }, [
     propertyValue,
+    depositOverride, depositManual,
     baseLvrOverride, baseLvrManual,
     baseLoanOverride, baseLoanManual,
     totalLoanOverride, totalLoanManual,
@@ -338,10 +346,14 @@ export default function PropertyCalculator({ propIndex }) {
             <CurrencyField label="Property Value" value={pv} onChange={setPropertyValue} />
 
             {/* Deposit Required */}
-            <div className="field">
-              <label>Deposit Required</label>
-              <input type="text" value={fmt(contribution)} readOnly />
-            </div>
+            <CurrencyField
+              label="Deposit Required"
+              value={depositOverride ? depositManual : contribution}
+              onChange={v => { setDepositOverride(true); setDepositManual(v); setBaseLoanOverride(false); setTotalLoanOverride(false); }}
+              autoCalc
+              overrideActive={depositOverride}
+              onToggleOverride={v => { setDepositOverride(v); if (!v) { setDepositManual(0); } }}
+            />
 
             {/* Base LVR — shows actual computed LVR (pv × 80% default) */}
             <div className="field has-toggle">
