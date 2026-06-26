@@ -822,3 +822,234 @@ table.stbl td.negative { color: var(--danger); font-weight: 700; }
 .pp-footer-contact strong { color: #1a1a1a; font-weight: 700; }
 .pp-footer-disclaimer { font-size: 0.58rem; color: #aaa; line-height: 1.45; max-width: 55%; text-align: right; }
 .pp-date { font-size: 0.62rem; color: #aaa; margin-bottom: 6px; }
+
+/* ── Summary Tab — Header row ── */
+.summary-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.summary-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+.summary-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.copy-link-btn {
+  background: var(--primary) !important;
+  margin: 0 !important;
+}
+.copy-link-btn:hover { background: #333 !important; }
+
+/* ── Summary Property Cards ── */
+.summary-cards-grid {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.summary-cards-1 { grid-template-columns: 1fr; max-width: 380px; }
+.summary-cards-2 { grid-template-columns: repeat(2, 1fr); }
+.summary-cards-3 { grid-template-columns: repeat(3, 1fr); }
+.summary-cards-4 { grid-template-columns: repeat(4, 1fr); }
+@media(max-width: 900px) {
+  .summary-cards-3, .summary-cards-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media(max-width: 540px) {
+  .summary-cards-2, .summary-cards-3, .summary-cards-4 { grid-template-columns: 1fr; }
+}
+
+.summary-prop-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.spc-label {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.spc-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.spc-cash {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.spc-cash-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.spc-funds-req {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+.spc-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-bottom: 12px;
+}
+.spc-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.spc-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.spc-stat-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.spc-stat-warn { color: var(--lmi-text) !important; }
+.spc-lmi-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  text-align: center;
+  margin-top: auto;
+}
+.spc-lmi-active { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.spc-lmi-clear  { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+/* ── Summary Print Page ── */
+.summary-print-page { display: none; }
+
+/* ── Print styles for summary tab ── */
+@media print {
+  /* When printing from summary tab, hide per-property print page; show summary print page */
+  body[data-active-tab="summary"] .print-page { display: none !important; }
+  body[data-active-tab="summary"] .summary-print-page { display: block !important; }
+  body[data-active-tab="summary"] .summary-cards-grid,
+  body[data-active-tab="summary"] .summary-table-card,
+  body[data-active-tab="summary"] .summary-header-row { display: none !important; }
+
+  /* When printing from calculator tab, hide summary print page */
+  body[data-active-tab="calculator"] .summary-print-page { display: none !important; }
+}
+
+/* Summary print page internals */
+.spp-cards-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.spp-card {
+  background: #f7f6f3;
+  border-radius: 8px;
+  padding: 12px 10px;
+}
+.spp-card-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 1px;
+}
+.spp-card-meta {
+  font-size: 0.62rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+.spp-cash {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #F5A41F;
+  line-height: 1;
+}
+.spp-cash-label {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #888;
+  margin-bottom: 2px;
+}
+.spp-funds-req {
+  font-size: 0.62rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+.spp-stats {
+  border-top: 1px solid #e2e1dc;
+  padding-top: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.spp-stats div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #555;
+}
+.spp-stats div strong { font-weight: 700; color: #1a1a1a; }
+.spp-warn { color: #c2410c !important; }
+.spp-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 20px;
+  text-align: center;
+}
+.spp-badge-lmi { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.spp-badge-ok  { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+.spp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 0.75rem;
+}
+.spp-table th, .spp-table td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid #e2e1dc;
+}
+.spp-table th {
+  background: #f7f6f3;
+  font-weight: 700;
+  font-size: 0.65rem;
+  color: #888;
+}
+.spp-section-row td {
+  font-weight: 800;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #ebebf5;
+  color: #555;
+  padding: 4px 8px;
+}
+.spp-total-row td {
+  font-weight: 700;
+  background: #f0f0f8;
+}
