@@ -68,7 +68,7 @@ function EditableCell({ label, value, onChange, readOnly, subtext }) {
   );
 }
 
-export default function PropertyCalculator({ propIndex }) {
+export default function PropertyCalculator({ propIndex, label }) {
   // ── Left panel ───────────────────────────────────────────────────────────
   const [state, setState] = useState('New South Wales');
   const [propertyType, setPropertyType] = useState('Established Home');
@@ -597,7 +597,16 @@ export default function PropertyCalculator({ propIndex }) {
 
       {/* ── Summary Table ── */}
       <div className="summary-table-card">
-        <div className="summary-table-header"><h2>Summary</h2></div>
+        <div className="summary-table-header">
+          <h2>Summary</h2>
+          <button className="print-btn" onClick={() => window.print()}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Print / Save PDF
+          </button>
+        </div>
         <table className="stbl">
           <thead>
             <tr><th style={{ width: '50%' }}></th><th>Funds Pos {propIndex + 1}</th></tr>
@@ -618,16 +627,155 @@ export default function PropertyCalculator({ propIndex }) {
             <tr><td>Proposed Loan Amount</td><td>{fmt(totalLoan)}</td></tr>
             <tr><td>Contribution Required</td><td className={contribution > 0 ? 'negative' : 'positive'}>{fmt(contribution)}</td></tr>
             <tr className="row-total"><td>Total Funds Available</td><td>{fmt(totalLoan + contribution)}</td></tr>
-            <tr className="row-header"><td colSpan={2}>Total Funds</td></tr>
-            <tr className="row-total"><td><strong>Total Funds</strong></td><td>{fmt(fundsRequired)}</td></tr>
-            <tr className="row-total">
-              <td>Total Funds Surplus/Deficit</td>
-              <td className={surplus >= 0 ? 'positive' : 'negative'}>
-                {surplus >= 0 ? fmt(surplus) : `−${fmt(Math.abs(surplus))}`}
-              </td>
-            </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PRINT PAGE — hidden on screen, shown only when printing
+          Browser: File → Print → Save as PDF
+      ══════════════════════════════════════════════════════ */}
+      <div className="print-page">
+        {/* Header */}
+        <div className="pp-header">
+          <div className="pp-logo">
+            <svg className="pp-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="45" width="80" height="50" rx="3" fill="#1a1a1a" />
+              <polygon points="50,5 95,48 5,48" fill="#1a1a1a" />
+              <path d="M35 95 L35 68 Q35 55 50 55 Q65 55 65 68 L65 95 Z" fill="white" />
+            </svg>
+            <div className="pp-logo-text">
+              <span className="pp-logo-eyebrow">Mortgage Broker Brisbane</span>
+              <span className="pp-logo-name">Hunter <span>Galloway</span></span>
+            </div>
+          </div>
+          <div className="pp-header-right">
+            <div className="pp-doc-title">Funds to Complete</div>
+            <div className="pp-doc-sub">Prepared {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          </div>
+        </div>
+
+        {/* Property name */}
+        <div className="pp-property-name">
+          {label || `Property ${propIndex + 1}`}
+          <span className="pp-property-badge">{stateCode} · {propertyType}</span>
+        </div>
+
+        {/* 4 key figures */}
+        <div className="pp-kpi-row">
+          <div className="pp-kpi">
+            <div className="pp-kpi-label">Property Value</div>
+            <div className="pp-kpi-value">{fmt(pv)}</div>
+            <div className="pp-kpi-sub">{purpose}</div>
+          </div>
+          <div className="pp-kpi">
+            <div className="pp-kpi-label">Loan Amount</div>
+            <div className="pp-kpi-value">{fmt(totalLoan)}</div>
+            <div className="pp-kpi-sub">Base {fmt(rawBaseLoan)}{lmiActive ? ` + LMI ${fmt(lmi)}` : ''}</div>
+          </div>
+          <div className="pp-kpi">
+            <div className="pp-kpi-label">LVR</div>
+            <div className={`pp-kpi-value ${lmiActive ? 'gold' : ''}`}>{fmtPct(totalLvr, 1)}</div>
+            <div className="pp-kpi-sub">{lmiActive ? '⚠ LMI applies' : '✓ No LMI'}</div>
+          </div>
+          <div className="pp-kpi highlight">
+            <div className="pp-kpi-label">Cash Required</div>
+            <div className="pp-kpi-value">{fmt(contribution)}</div>
+            <div className="pp-kpi-sub">Total funds {fmt(fundsRequired)}</div>
+          </div>
+        </div>
+
+        {/* Body — two columns */}
+        <div className="pp-body">
+          {/* Left: Cost breakdown */}
+          <div className="pp-section">
+            <div className="pp-section-title">Cost Breakdown</div>
+            <div className="pp-row">
+              <span className="pp-row-label">Purchase Price</span>
+              <span className="pp-row-value">{fmt(pv)}</span>
+            </div>
+            <div className="pp-row">
+              <span className="pp-row-label">Stamp Duty</span>
+              <span className="pp-row-value">{fmt(netStampDuty)}</span>
+            </div>
+            <div className="pp-row">
+              <span className="pp-row-label">Transfer &amp; Registration Fees</span>
+              <span className="pp-row-value">${(transferFee + mortgageReg).toFixed(2)}</span>
+            </div>
+            <div className="pp-row">
+              <span className="pp-row-label">Legal &amp; Bank Fees (est.)</span>
+              <span className="pp-row-value">{fmt(fees)}</span>
+            </div>
+            {!capLMI && lmi > 0 && (
+              <div className="pp-row lmi-row">
+                <span className="pp-row-label">LMI Premium (upfront)</span>
+                <span className="pp-row-value">{fmt(lmi)}</span>
+              </div>
+            )}
+            <div className="pp-row total">
+              <span className="pp-row-label">Total Funds Required</span>
+              <span className="pp-row-value">{fmt(fundsRequired)}</span>
+            </div>
+          </div>
+
+          {/* Right: How it's funded */}
+          <div className="pp-section">
+            <div className="pp-section-title">How It's Funded</div>
+            <div className="pp-row">
+              <span className="pp-row-label">Base Loan</span>
+              <span className="pp-row-value">{fmt(rawBaseLoan)}</span>
+            </div>
+            {lmiActive && capLMI && (
+              <div className="pp-row lmi-row">
+                <span className="pp-row-label">+ LMI (capitalised into loan)</span>
+                <span className="pp-row-value">{fmt(lmi)}</span>
+              </div>
+            )}
+            <div className="pp-row">
+              <span className="pp-row-label">Total Loan Amount</span>
+              <span className="pp-row-value">{fmt(totalLoan)}</span>
+            </div>
+            <div className="pp-row total">
+              <span className="pp-row-label">Cash Deposit Required</span>
+              <span className="pp-row-value">{fmt(contribution)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Repayment estimate */}
+        <div className="pp-repayment">
+          <div>
+            <div className="pp-repayment-label">Estimated Monthly Repayment</div>
+            <div className="pp-repayment-detail">{fmtPct(rate, 2)} p.a. · {term} yr loan{ioTerm > 0 ? ` · ${ioTerm} yr IO` : ' · P&I'}</div>
+          </div>
+          <div className="pp-repayment-value">{fmt(repayment)}/mo</div>
+        </div>
+
+        {/* LMI note if applicable */}
+        {lmiActive && (
+          <div className="pp-lmi-note">
+            <strong>⚠ Lender's Mortgage Insurance (LMI) applies</strong> — estimated {fmt(lmi)}.
+            LVR of {fmtPct(totalLvr, 1)} exceeds 80%. LMI is {capLMI ? 'capitalised into the loan' : 'payable upfront'}.
+            This is an industry estimate only — confirm the exact premium with your lender at application.
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="pp-footer">
+          <div className="pp-footer-contact">
+            <div className="pp-date">Prepared {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
+            <strong>Hunter Galloway</strong> — Mortgage Broker Brisbane<br />
+            📞 1300 088 065 &nbsp;·&nbsp; ✉ hello@huntergalloway.com.au<br />
+            Level 10, 179 North Quay, Brisbane QLD 4000
+          </div>
+          <div className="pp-footer-disclaimer">
+            This document is prepared as a guide only and does not constitute financial advice.
+            All figures are estimates based on information provided and may vary. Government charges,
+            LMI premiums and fees are subject to change. Please confirm all amounts with your
+            solicitor and lender prior to settlement. Hunter Galloway Pty Ltd is a Credit
+            Representative of BLSSA Pty Ltd ACL 391237.
+          </div>
+        </div>
       </div>
     </div>
   );
