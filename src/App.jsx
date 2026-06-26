@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import PropertyCalculator from './components/PropertyCalculator';
 
 // Hunter Galloway logo mark — house silhouette with arch doorway cutout
@@ -22,12 +22,65 @@ function fmtPct(n, dec = 1) {
   return Number(n).toFixed(dec) + '%';
 }
 
+function CopyLinkButton({ summaries, properties }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const payload = properties.map((p, i) => {
+      const s = summaries[p.id];
+      if (!s) return { label: p.label };
+      return {
+        label: p.label,
+        ...(s.inputState || {}),
+      };
+    });
+    const encoded = btoa(JSON.stringify(payload));
+    const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <button className="print-btn copy-link-btn" onClick={handleCopy}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+      {copied ? 'Copied!' : 'Copy Link'}
+    </button>
+  );
+}
+
 export default function App() {
   const [properties, setProperties] = useState([{ id: 1, label: 'Property 1' }]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [activeTab, setActiveTab] = useState('calculator');
   // Holds the live summary data from each PropertyCalculator
   const [summaries, setSummaries] = useState({});
+  // initialValues per property index (for URL share restore)
+  const [initialValues, setInitialValues] = useState([]);
+
+  // Parse URL share param on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('share');
+    if (encoded) {
+      try {
+        const data = JSON.parse(atob(encoded));
+        if (Array.isArray(data) && data.length > 0) {
+          setProperties(data.map((d, i) => ({ id: i + 1, label: d.label || `Property ${i + 1}` })));
+          setInitialValues(data);
+        }
+      } catch(e) {}
+    }
+  }, []);
+
+  // Set data-active-tab on body for print style switching
+  useEffect(() => {
+    document.body.setAttribute('data-active-tab', activeTab);
+  }, [activeTab]);
 
   const addProperty = () => {
     const next = { id: Date.now(), label: `Property ${properties.length + 1}` };
@@ -79,6 +132,7 @@ export default function App() {
               propIndex={i}
               label={p.label}
               onSummaryUpdate={(data) => handleSummaryUpdate(p.id, data)}
+              initialValues={initialValues[i]}
             />
           </div>
         ))}
@@ -93,9 +147,25 @@ export default function App() {
 }
 
 function SummaryView({ properties, summaries }) {
-  const cols = properties.map(p => summaries[p.id]).filter(Boolean);
+  const allCols = properties.map(p => summaries[p.id]).filter(Boolean);
 
-  if (cols.length === 0) {
+  // For Copy Link we need access to properties + summaries
+  const [copied, setCopied] = useState(false);
+  const handleCopyLink = () => {
+    const payload = properties.map((p) => {
+      const s = summaries[p.id];
+      if (!s) return { label: p.label };
+      return { label: p.label, ...(s.inputState || {}) };
+    });
+    const encoded = btoa(JSON.stringify(payload));
+    const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  if (allCols.length === 0) {
     return (
       <div className="property-card" style={{ textAlign: 'center', padding: 48 }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
@@ -105,13 +175,13 @@ function SummaryView({ properties, summaries }) {
     );
   }
 
-  const rows = [
+  const cols = allCols.slice(0, 4);
+
+  const tableRows = [
     { section: 'Property Details' },
     { label: 'Property Value',      key: d => fmt(d.pv) },
     { label: 'State / Purpose',     key: d => `${d.stateCode} · ${d.purpose}` },
-    { label: 'Loan Amount',         key: d => fmt(d.totalLoan) },
-    { label: 'LVR',                 key: d => fmtPct(d.totalLvr), highlight: d => d.lmiActive },
-    { label: 'LMI Applicable',      key: d => d.lmiActive ? `Yes — ${fmt(d.lmi)}` : 'No', highlight: d => d.lmiActive },
+    { label: 'Property Type',       key: d => d.propertyType },
     { section: 'Cost Breakdown' },
     { label: 'Stamp Duty',          key: d => fmt(d.netStampDuty) },
     { label: 'Transfer & Reg Fees', key: d => `$${(d.transferFee + d.mortgageReg).toFixed(2)}` },
@@ -122,36 +192,160 @@ function SummaryView({ properties, summaries }) {
     { label: 'Base Loan',           key: d => fmt(d.rawBaseLoan) },
     { label: 'LMI (capitalised)',   key: d => d.lmiActive && d.capLMI ? fmt(d.lmi) : '—' },
     { label: 'Total Loan',          key: d => fmt(d.totalLoan), bold: true },
-    { section: 'Cash Required' },
-    { label: 'Cash Deposit Required', key: d => fmt(d.contribution), bold: true, highlight: () => true },
-    { label: 'Est. Monthly Repayment',key: d => `${fmt(d.repayment)}/mo` },
+    { label: 'LVR',                 key: d => fmtPct(d.totalLvr), highlight: d => d.lmiActive },
+    { label: 'Est. Monthly Repayment', key: d => `${fmt(d.repayment)}/mo` },
   ];
 
   return (
-    <div className="summary-table-card">
-      <div className="summary-table-header"><h2>Summary</h2></div>
-      <div style={{ overflowX: 'auto' }}>
-        <table className="stbl">
+    <div>
+      {/* ── Property Cards ── */}
+      <div className="summary-header-row">
+        <h2 className="summary-title">Property Comparison</h2>
+        <div className="summary-header-actions">
+          <button className="print-btn copy-link-btn" onClick={handleCopyLink}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            {copied ? 'Copied!' : 'Copy Link'}
+          </button>
+          <button className="print-btn" onClick={() => window.print()}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Print / Save PDF
+          </button>
+        </div>
+      </div>
+
+      <div className={`summary-cards-grid summary-cards-${cols.length}`}>
+        {cols.map((c, i) => (
+          <div key={i} className="summary-prop-card">
+            <div className="spc-label">{c.label}</div>
+            <div className="spc-meta">{c.stateCode} · {c.purpose}</div>
+            <div className="spc-cash">{fmt(c.contribution)}</div>
+            <div className="spc-cash-label">Cash Required</div>
+            <div className="spc-funds-req">Total Funds Required: {fmt(c.fundsRequired)}</div>
+            <div className="spc-stats">
+              <div className="spc-stat">
+                <div className="spc-stat-label">Property Value</div>
+                <div className="spc-stat-value">{fmt(c.pv)}</div>
+              </div>
+              <div className="spc-stat">
+                <div className="spc-stat-label">Loan Amount</div>
+                <div className="spc-stat-value">{fmt(c.totalLoan)}</div>
+              </div>
+              <div className="spc-stat">
+                <div className="spc-stat-label">LVR</div>
+                <div className={`spc-stat-value ${c.lmiActive ? 'spc-stat-warn' : ''}`}>{fmtPct(c.totalLvr)}</div>
+              </div>
+            </div>
+            {c.lmiActive
+              ? <div className="spc-lmi-badge spc-lmi-active">⚠ LMI — {fmt(c.lmi)}</div>
+              : c.pv > 0 ? <div className="spc-lmi-badge spc-lmi-clear">✓ No LMI</div> : null
+            }
+          </div>
+        ))}
+      </div>
+
+      {/* ── Detailed Comparison Table ── */}
+      <div className="summary-table-card">
+        <div className="summary-table-header"><h2>Detailed Comparison</h2></div>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="stbl">
+            <thead>
+              <tr>
+                <th style={{ width: '30%' }}></th>
+                {cols.map((c, i) => <th key={i}>{c.label}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {tableRows.map((row, ri) => {
+                if (row.section) {
+                  return (
+                    <tr key={ri} className="row-header">
+                      <td colSpan={cols.length + 1}>{row.section}</td>
+                    </tr>
+                  );
+                }
+                return (
+                  <tr key={ri} className={row.bold ? 'row-total' : ''}>
+                    <td>{row.label}</td>
+                    {cols.map((c, ci) => (
+                      <td key={ci} style={row.highlight?.(c) ? { color: 'var(--lmi-text)', fontWeight: 700 } : row.bold ? { color: 'var(--accent)', fontWeight: 700 } : {}}>
+                        {row.key(c)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Summary Print Page (shown only when printing from Summary tab) ── */}
+      <div className="summary-print-page">
+        <div className="pp-header">
+          <div className="pp-logo">
+            <svg className="pp-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M50 6 L94 46 L94 94 L6 94 L6 46 Z" fill="#1a1a1a" />
+              <path d="M37 94 L37 65 A13 13 0 0 1 63 65 L63 94 Z" fill="white" />
+            </svg>
+            <div className="pp-logo-text">
+              <span className="pp-logo-eyebrow">Mortgage Broker Brisbane</span>
+              <span className="pp-logo-name">Hunter <span>Galloway</span></span>
+            </div>
+          </div>
+          <div className="pp-header-right">
+            <div className="pp-doc-title">Property Comparison</div>
+            <div className="pp-doc-sub">Prepared {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          </div>
+        </div>
+
+        <div className="spp-cards-row">
+          {cols.map((c, i) => (
+            <div key={i} className="spp-card">
+              <div className="spp-card-label">{c.label}</div>
+              <div className="spp-card-meta">{c.stateCode} · {c.purpose}</div>
+              <div className="spp-cash">{fmt(c.contribution)}</div>
+              <div className="spp-cash-label">Cash Required</div>
+              <div className="spp-funds-req">Total Funds: {fmt(c.fundsRequired)}</div>
+              <div className="spp-stats">
+                <div><span>Property Value</span><strong>{fmt(c.pv)}</strong></div>
+                <div><span>Loan Amount</span><strong>{fmt(c.totalLoan)}</strong></div>
+                <div><span>LVR</span><strong className={c.lmiActive ? 'spp-warn' : ''}>{fmtPct(c.totalLvr)}</strong></div>
+              </div>
+              {c.lmiActive
+                ? <div className="spp-badge spp-badge-lmi">⚠ LMI — {fmt(c.lmi)}</div>
+                : c.pv > 0 ? <div className="spp-badge spp-badge-ok">✓ No LMI</div> : null
+              }
+            </div>
+          ))}
+        </div>
+
+        <table className="spp-table">
           <thead>
             <tr>
-              <th style={{ width: '30%' }}></th>
+              <th></th>
               {cols.map((c, i) => <th key={i}>{c.label}</th>)}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, ri) => {
+            {tableRows.map((row, ri) => {
               if (row.section) {
                 return (
-                  <tr key={ri} className="row-header">
+                  <tr key={ri} className="spp-section-row">
                     <td colSpan={cols.length + 1}>{row.section}</td>
                   </tr>
                 );
               }
               return (
-                <tr key={ri} className={row.bold ? 'row-total' : ''}>
+                <tr key={ri} className={row.bold ? 'spp-total-row' : ''}>
                   <td>{row.label}</td>
                   {cols.map((c, ci) => (
-                    <td key={ci} style={row.highlight?.(c) ? { color: 'var(--lmi-text)', fontWeight: 700 } : row.bold ? { color: 'var(--accent)', fontWeight: 700 } : {}}>
+                    <td key={ci} style={row.highlight?.(c) ? { color: '#c2410c', fontWeight: 700 } : row.bold ? { color: '#F5A41F', fontWeight: 700 } : {}}>
                       {row.key(c)}
                     </td>
                   ))}
@@ -160,6 +354,22 @@ function SummaryView({ properties, summaries }) {
             })}
           </tbody>
         </table>
+
+        <div className="pp-footer" style={{ marginTop: 20 }}>
+          <div className="pp-footer-contact">
+            <div className="pp-date">Prepared {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
+            <strong>Hunter Galloway</strong> — Mortgage Broker Brisbane<br />
+            📞 1300 088 065 &nbsp;·&nbsp; ✉ hello@huntergalloway.com.au<br />
+            Level 10, 179 North Quay, Brisbane QLD 4000
+          </div>
+          <div className="pp-footer-disclaimer">
+            This document is prepared as a guide only and does not constitute financial advice.
+            All figures are estimates based on information provided and may vary. Government charges,
+            LMI premiums and fees are subject to change. Please confirm all amounts with your
+            solicitor and lender prior to settlement. Hunter Galloway Pty Ltd is a Credit
+            Representative of BLSSA Pty Ltd ACL 391237.
+          </div>
+        </div>
       </div>
     </div>
   );

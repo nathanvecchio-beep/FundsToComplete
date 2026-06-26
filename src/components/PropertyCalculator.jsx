@@ -68,16 +68,16 @@ function EditableCell({ label, value, onChange, readOnly, subtext }) {
   );
 }
 
-export default function PropertyCalculator({ propIndex, label, onSummaryUpdate }) {
+export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, initialValues }) {
   // ── Left panel ───────────────────────────────────────────────────────────
-  const [state, setState] = useState('New South Wales');
-  const [propertyType, setPropertyType] = useState('Established Home');
-  const [purpose, setPurpose] = useState('Owner Occupied');
+  const [state, setState] = useState(initialValues?.state || 'New South Wales');
+  const [propertyType, setPropertyType] = useState(initialValues?.propertyType || 'Established Home');
+  const [purpose, setPurpose] = useState(initialValues?.purpose || 'Owner Occupied');
   const [transType, setTransType] = useState('Purchase');
-  const [firstHome, setFirstHome] = useState(false);
+  const [firstHome, setFirstHome] = useState(initialValues?.firstHome || false);
   const [diffValuation, setDiffValuation] = useState(false);
   const [selfEmployed, setSelfEmployed] = useState(false);
-  const [foreignBuyer, setForeignBuyer] = useState(false);
+  const [foreignBuyer, setForeignBuyer] = useState(initialValues?.foreignBuyer || false);
 
   // ── LMI waivers ─────────────────────────────────────────────────────────
   const [lmiOpen, setLmiOpen] = useState(true);
@@ -87,11 +87,11 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate }
 
   // ── Core inputs ──────────────────────────────────────────────────────────
   // Property value — single source of truth
-  const [propertyValue, setPropertyValue] = useState(0);
+  const [propertyValue, setPropertyValue] = useState(initialValues?.pv || 0);
 
   // Base LVR — user can override, default 80%
-  const [baseLvrOverride, setBaseLvrOverride] = useState(false);
-  const [baseLvrManual, setBaseLvrManual] = useState(80);
+  const [baseLvrOverride, setBaseLvrOverride] = useState(initialValues?.lvr != null);
+  const [baseLvrManual, setBaseLvrManual] = useState(initialValues?.lvr != null ? initialValues.lvr : 80);
 
   // Base loan — user can override; default = pv × baseLvr
   const [baseLoanOverride, setBaseLoanOverride] = useState(false);
@@ -111,8 +111,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate }
   const [fundsManual, setFundsManual] = useState(0);
 
   // ── Repayment ────────────────────────────────────────────────────────────
-  const [rate, setRate] = useState(DEFAULT_RATE);
-  const [term, setTerm] = useState(DEFAULT_TERM);
+  const [rate, setRate] = useState(initialValues?.rate ?? DEFAULT_RATE);
+  const [term, setTerm] = useState(initialValues?.term ?? DEFAULT_TERM);
   const [ioTerm, setIoTerm] = useState(0);
 
   // ── LMI options ──────────────────────────────────────────────────────────
@@ -273,11 +273,23 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate }
       fees, fundsRequired, contribution, repayment,
       stateCode, purpose, propertyType,
       rate, term, ioTerm,
+      inputState: {
+        pv,
+        state,
+        propertyType,
+        purpose,
+        firstHome,
+        foreignBuyer,
+        rate,
+        term,
+        baseLvrManual,
+      },
     });
   }, [pv, totalLoan, rawBaseLoan, totalLvr, lmi, lmiActive, capLMI,
       netStampDuty, transferFee, mortgageReg, totalGovt,
       fees, fundsRequired, contribution, repayment,
-      stateCode, purpose, propertyType, label, propIndex, rate, term, ioTerm]);
+      stateCode, purpose, propertyType, label, propIndex, rate, term, ioTerm,
+      state, firstHome, foreignBuyer, baseLvrManual]);
 
   // ── Summary bar handlers ─────────────────────────────────────────────────
   // Editing "Property Value" → clears all overrides so everything auto-recalculates

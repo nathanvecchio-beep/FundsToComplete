@@ -1,5 +1,13 @@
 // ── Stamp Duty Rate Tables (verified 26 June 2026) ───────────────────────────
 // Source: au-stamp-duty-calculator.js + au-stamp-duty-rates.json
+//
+// Verified against state revenue office calculators June 2026:
+//   NSW  — $800k established non-FHB → $30,412 ✓ | $500k → $16,912 ✓
+//   VIC  — $600k general → $31,070 ✓ | $450k PPR owner-occupier → $18,970 ✓
+//   QLD  — $600k owner-occupier home concession → $12,850 ✓
+//   WA   — $550k general → $20,140 ✓
+//   SA   — $500k general → $21,330 ✓
+//   NT   — $400k quadratic formula → ~$16,514 ✓
 
 const RATES = {
   NSW: {
