@@ -250,9 +250,13 @@ export default function PropertyCalculator({ propIndex }) {
         </div>
         <div className="sb-divider" />
         <div className="sb-editable-item">
-          <div className="sb-label">Funds Required</div>
-          <div className="sb-value">{fundsRequired > 0 ? fmt(fundsRequired) : 'N/A'}</div>
-          <div className="sb-subtext">{contribution > 0 ? `Deposit needed: ${fmt(contribution)}` : ''}</div>
+          <div className="sb-label">Cash Required</div>
+          <div className={`sb-value ${contribution > 0 ? 'sb-value-highlight' : ''}`}>
+            {fundsRequired > 0 ? fmt(contribution) : 'N/A'}
+          </div>
+          <div className="sb-subtext">
+            {fundsRequired > 0 ? `Total funds to complete: ${fmt(fundsRequired)}` : ''}
+          </div>
         </div>
       </div>
 
