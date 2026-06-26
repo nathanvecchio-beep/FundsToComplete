@@ -337,14 +337,11 @@ export default function PropertyCalculator({ propIndex }) {
             {/* Property Value */}
             <CurrencyField label="Property Value" value={pv} onChange={setPropertyValue} />
 
-            {/* Funds Required */}
-            <CurrencyField
-              label="Funds Required"
-              value={fundsRequired}
-              onChange={setFundsManual}
-              autoCalc overrideActive={fundsOverride}
-              onToggleOverride={setFundsOverride}
-            />
+            {/* Deposit Required */}
+            <div className="field">
+              <label>Deposit Required</label>
+              <input type="text" value={fmt(contribution)} readOnly />
+            </div>
 
             {/* Base LVR — shows actual computed LVR (pv × 80% default) */}
             <div className="field has-toggle">

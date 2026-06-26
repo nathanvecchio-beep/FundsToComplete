@@ -10,7 +10,7 @@ export function CurrencyField({ label, value, onChange, autoCalc, overrideActive
 
   const display = overrideActive || !autoCalc
     ? (value === 0 || value === '' ? '' : String(value))
-    : value === 0 ? '$0' : value ? `$${Number(value).toLocaleString()}` : '$0';
+    : value === 0 ? '$0' : value ? `$${Math.round(Number(value)).toLocaleString()}` : '$0';
 
   return (
     <div className={`field ${autoCalc ? 'has-toggle' : ''} ${className || ''}`}>
