@@ -143,17 +143,10 @@ export default function PropertyCalculator({ propIndex }) {
     // Base LVR
     const baseLvr = baseLvrOverride ? Number(baseLvrManual) : 80;
 
-    // Base loan (before LMI)
-    // Priority: depositOverride → baseLoanOverride → totalLoanOverride → auto (pv × baseLvr)
-    const rawBaseLoan = depositOverride
-      ? Math.max(0, pv - Number(depositManual))
-      : baseLoanOverride
-        ? Number(baseLoanManual)
-        : totalLoanOverride
-          ? Number(totalLoanManual)   // if user typed total loan directly, treat as base loan until LMI is known
-          : Math.round(pv * baseLvr / 100);
+    // Fees (needed early for deposit → loan conversion)
+    const fees = feesOverride ? Number(feesManual) : DEFAULT_FEES;
 
-    // Stamp duty
+    // Stamp duty (doesn't depend on loan amount)
     const autoStampDuty = calculateStampDuty(stateCode, pv, {
       isFirstHome: firstHome,
       isOwnerOccupier: purpose === 'Owner Occupied',
@@ -163,8 +156,20 @@ export default function PropertyCalculator({ propIndex }) {
     const stampDuty = stampDutyOverride ? Number(stampDutyManual) : autoStampDuty;
     const stampDutyConc = stampDutyConcOverride ? Number(stampDutyConcManual) : 0;
     const netStampDuty = Math.max(0, stampDuty - stampDutyConc);
-
     const transferFee = calculateTransferFee(stateCode, pv);
+
+    // Base loan (before LMI)
+    // When depositOverride: deposit covers pv gap + all costs, so loan = pv - (deposit - costs)
+    // Priority: depositOverride → baseLoanOverride → totalLoanOverride → auto (pv × baseLvr)
+    const nonLoanCosts = govtChargesOn ? (netStampDuty + transferFee + fees) : fees;
+    const rawBaseLoan = depositOverride
+      ? Math.max(0, Math.round(pv - (Number(depositManual) - nonLoanCosts)))
+      : baseLoanOverride
+        ? Number(baseLoanManual)
+        : totalLoanOverride
+          ? Number(totalLoanManual)
+          : Math.round(pv * baseLvr / 100);
+
     const mortgageReg = calculateMortgageRegistration(stateCode, rawBaseLoan);
     const totalGovt = govtChargesOn ? (netStampDuty + transferFee + mortgageReg) : 0;
 
@@ -174,7 +179,7 @@ export default function PropertyCalculator({ propIndex }) {
     const lmi = overrideLMI ? Number(lmiManualAmt) : lmiAuto;
     const capitalisedLmi = capLMI ? lmi : 0;
 
-    // Total loan — baseLoan + capitalised LMI (unless user has directly overridden total loan AND also overridden base loan)
+    // Total loan — baseLoan + capitalised LMI (unless user has directly overridden both)
     const totalLoan = (totalLoanOverride && baseLoanOverride)
       ? Number(totalLoanManual)
       : rawBaseLoan + capitalisedLmi;
@@ -183,8 +188,7 @@ export default function PropertyCalculator({ propIndex }) {
     const baseLvrCalc = pv > 0 ? (rawBaseLoan / pv * 100) : 0;
     const totalLvr    = pv > 0 ? (totalLoan / pv * 100) : 0;
 
-    // Fees & funds
-    const fees = feesOverride ? Number(feesManual) : DEFAULT_FEES;
+    // Total funds required = everything the customer must pay
     const totalFundsRequired = pv + totalGovt + fees + (capLMI ? 0 : lmi);
     const fundsRequired = fundsOverride ? Number(fundsManual) : totalFundsRequired;
 
