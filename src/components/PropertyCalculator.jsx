@@ -146,7 +146,7 @@ export default function PropertyCalculator({ propIndex }) {
     // Fees (needed early for deposit → loan conversion)
     const fees = feesOverride ? Number(feesManual) : DEFAULT_FEES;
 
-    // Stamp duty (doesn't depend on loan amount)
+    // Stamp duty and transfer fee don't depend on loan amount — compute first
     const autoStampDuty = calculateStampDuty(stateCode, pv, {
       isFirstHome: firstHome,
       isOwnerOccupier: purpose === 'Owner Occupied',
@@ -159,16 +159,35 @@ export default function PropertyCalculator({ propIndex }) {
     const transferFee = calculateTransferFee(stateCode, pv);
 
     // Base loan (before LMI)
-    // When depositOverride: deposit covers pv gap + all costs, so loan = pv - (deposit - costs)
-    // Priority: depositOverride → baseLoanOverride → totalLoanOverride → auto (pv × baseLvr)
-    const nonLoanCosts = govtChargesOn ? (netStampDuty + transferFee + fees) : fees;
-    const rawBaseLoan = depositOverride
-      ? Math.max(0, Math.round(pv - (Number(depositManual) - nonLoanCosts)))
-      : baseLoanOverride
-        ? Number(baseLoanManual)
-        : totalLoanOverride
-          ? Number(totalLoanManual)
-          : Math.round(pv * baseLvr / 100);
+    // depositOverride has a circular dependency: both mortgageReg and LMI depend on rawBaseLoan.
+    // We solve by iterating until the computed contribution matches the entered deposit.
+    //   capLMI=true:  contribution = pv + totalGovt + fees - rawBaseLoan - lmi  → rawBaseLoan = pv + totalGovt + fees - D - lmi
+    //   capLMI=false: contribution = pv + totalGovt + fees + lmi - rawBaseLoan  → rawBaseLoan = pv + totalGovt + fees + lmi - D
+    let rawBaseLoan;
+    if (depositOverride) {
+      const D = Number(depositManual);
+      // Initial estimate ignoring mortgageReg and LMI
+      let est = Math.max(0, pv + (govtChargesOn ? (netStampDuty + transferFee) : 0) + fees - D);
+      for (let i = 0; i < 5; i++) {
+        const mortRegEst = calculateMortgageRegistration(stateCode, est);
+        const totalGovtEst = govtChargesOn ? (netStampDuty + transferFee + mortRegEst) : 0;
+        const lmiEst = overrideLMI ? Number(lmiManualAmt) : calculateLMI(est, pv, lmiWaived, stateCode).lmi;
+        const next = Math.max(0, Math.round(
+          capLMI
+            ? pv + totalGovtEst + fees - D - lmiEst
+            : pv + totalGovtEst + fees + lmiEst - D
+        ));
+        if (next === est) break;
+        est = next;
+      }
+      rawBaseLoan = est;
+    } else if (baseLoanOverride) {
+      rawBaseLoan = Number(baseLoanManual);
+    } else if (totalLoanOverride) {
+      rawBaseLoan = Number(totalLoanManual);
+    } else {
+      rawBaseLoan = Math.round(pv * baseLvr / 100);
+    }
 
     const mortgageReg = calculateMortgageRegistration(stateCode, rawBaseLoan);
     const totalGovt = govtChargesOn ? (netStampDuty + transferFee + mortgageReg) : 0;
