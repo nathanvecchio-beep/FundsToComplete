@@ -823,6 +823,132 @@ table.stbl td.negative { color: var(--danger); font-weight: 700; }
 .pp-footer-disclaimer { font-size: 0.58rem; color: #aaa; line-height: 1.45; max-width: 55%; text-align: right; }
 .pp-date { font-size: 0.62rem; color: #aaa; margin-bottom: 6px; }
 
+/* ── Buying Costs summary (always visible in right panel) ── */
+.cost-summary-section {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 14px 10px;
+  margin-bottom: 14px;
+}
+.cs-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid var(--border);
+}
+.cs-title {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.cs-govtoff-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+.cs-tag-off { background: #e5e7eb; color: #6b7280; }
+.cs-tag-override { background: var(--lmi-text); }
+.cs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.cs-label {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+.cs-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: white;
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+.cs-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.cs-value {
+  font-weight: 600;
+  color: var(--text);
+}
+.cs-adjust {
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  white-space: nowrap;
+}
+.cs-reset {
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  white-space: nowrap;
+}
+.cs-override-input {
+  width: 90px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  text-align: right;
+  background: white;
+}
+.cs-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 5px;
+  border-top: 2px solid var(--border);
+  margin-top: 4px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.cs-cash-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.cs-cash-row span:last-child {
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
 /* ── Summary Tab — Header row ── */
 .summary-header-row {
   display: flex;

@@ -303,6 +303,10 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     setBaseLoanOverride(true);
     setBaseLoanManual(v);
     setTotalLoanOverride(false); // let total loan auto-compute (base + LMI)
+    // Clear other overrides so they don't conflict
+    setDepositOverride(false);
+    setDepositManual(0);
+    setBaseLvrOverride(false);
   };
 
   return (
@@ -421,10 +425,17 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             <CurrencyField
               label="Deposit Required"
               value={depositOverride ? depositManual : contribution}
-              onChange={v => { setDepositOverride(true); setDepositManual(v); setBaseLoanOverride(false); setTotalLoanOverride(false); }}
+              onChange={v => {
+                setDepositOverride(true); setDepositManual(v);
+                setBaseLoanOverride(false); setTotalLoanOverride(false); setBaseLvrOverride(false);
+              }}
               autoCalc
               overrideActive={depositOverride}
-              onToggleOverride={v => { setDepositOverride(v); if (!v) { setDepositManual(0); } }}
+              onToggleOverride={v => {
+                setDepositOverride(v);
+                if (!v) { setDepositManual(0); }
+                if (v) { setBaseLoanOverride(false); setBaseLvrOverride(false); }
+              }}
             />
 
             {/* Base LVR — shows actual computed LVR (pv × 80% default) */}
@@ -438,7 +449,11 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               }
               <div className="field-right">
                 {!baseLvrOverride && <span className="autocalc-badge">AUTOCALCULATED</span>}
-                <Toggle checked={baseLvrOverride} onChange={v => { setBaseLvrOverride(v); if (!v) { setBaseLoanOverride(false); } }} />
+                <Toggle checked={baseLvrOverride} onChange={v => {
+                setBaseLvrOverride(v);
+                if (!v) { setBaseLoanOverride(false); }
+                if (v) { setDepositOverride(false); setDepositManual(0); setBaseLoanOverride(false); }
+              }} />
               </div>
             </div>
 
@@ -453,10 +468,17 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             <CurrencyField
               label="Base Loan Amount"
               value={rawBaseLoan}
-              onChange={v => { setBaseLoanOverride(true); setBaseLoanManual(v); }}
+              onChange={v => {
+                setBaseLoanOverride(true); setBaseLoanManual(v);
+                setDepositOverride(false); setDepositManual(0);
+              }}
               autoCalc
               overrideActive={baseLoanOverride}
-              onToggleOverride={v => { setBaseLoanOverride(v); if (!v) setTotalLoanOverride(false); }}
+              onToggleOverride={v => {
+                setBaseLoanOverride(v);
+                if (!v) setTotalLoanOverride(false);
+                if (v) { setDepositOverride(false); setDepositManual(0); setBaseLvrOverride(false); }
+              }}
             />
 
             {/* LMI inline row */}
@@ -471,6 +493,89 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             <div className="field">
               <label>Total Loan Amount</label>
               <input type="text" value={fmt(totalLoan)} readOnly />
+            </div>
+
+            {/* ── Buying Costs — always visible ── */}
+            <div className="cost-summary-section">
+              <div className="cs-title-row">
+                <span className="cs-title">Buying Costs</span>
+                {!govtChargesOn && <span className="cs-govtoff-badge">Govt charges excluded</span>}
+              </div>
+
+              <div className="cs-row">
+                <span className="cs-label">
+                  Stamp Duty
+                  {firstHome && <span className="cs-tag">FHB rate</span>}
+                  {!govtChargesOn && <span className="cs-tag cs-tag-off">excluded</span>}
+                  {stampDutyOverride && <span className="cs-tag cs-tag-override">OVERRIDE</span>}
+                </span>
+                <div className="cs-right">
+                  {stampDutyOverride ? (
+                    <>
+                      <input
+                        className="cs-override-input"
+                        type="number"
+                        value={stampDutyManual}
+                        onChange={e => setStampDutyManual(Number(e.target.value))}
+                      />
+                      <button className="cs-reset" onClick={() => { setStampDutyOverride(false); setStampDutyManual(0); }}>↩ auto</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="cs-value">{fmt(netStampDuty)}</span>
+                      <button className="cs-adjust" onClick={() => { setStampDutyOverride(true); setStampDutyManual(netStampDuty); }}>adjust</button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {stampDutyConc > 0 && (
+                <div className="cs-row" style={{ color: 'var(--success)' }}>
+                  <span className="cs-label">Stamp Duty Concession</span>
+                  <span className="cs-value">−{fmt(stampDutyConc)}</span>
+                </div>
+              )}
+
+              <div className="cs-row">
+                <span className="cs-label">Transfer &amp; Registration</span>
+                <span className="cs-value">${(transferFee + mortgageReg).toFixed(2)}</span>
+              </div>
+
+              <div className="cs-row">
+                <span className="cs-label">Legal &amp; Bank Fees</span>
+                <span className="cs-value">{fmt(fees)}</span>
+              </div>
+
+              {ratesAdj > 0 && (
+                <div className="cs-row">
+                  <span className="cs-label">Rates Adjustment</span>
+                  <span className="cs-value">{fmt(ratesAdj)}</span>
+                </div>
+              )}
+
+              {!capLMI && lmi > 0 && (
+                <div className="cs-row" style={{ color: 'var(--lmi-text)' }}>
+                  <span className="cs-label">LMI Premium (upfront)</span>
+                  <span className="cs-value">{fmt(lmi)}</span>
+                </div>
+              )}
+
+              {fhog > 0 && (
+                <div className="cs-row" style={{ color: 'var(--success)' }}>
+                  <span className="cs-label">First Home Owner Grant</span>
+                  <span className="cs-value">−{fmt(fhog)}</span>
+                </div>
+              )}
+
+              <div className="cs-total-row">
+                <span>Total Funds Required</span>
+                <span>{fmt(fundsRequired)}</span>
+              </div>
+
+              <div className="cs-cash-row">
+                <span>Cash Required</span>
+                <span>{fmt(contribution)}</span>
+              </div>
             </div>
 
             {/* Repayment */}
