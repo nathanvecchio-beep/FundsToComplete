@@ -421,6 +421,29 @@ body {
   margin-bottom: 12px;
 }
 
+/* ── Broker section label (left panel groupings) ── */
+.broker-section-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+/* ── Override reset link ── */
+.override-reset {
+  background: none;
+  border: none;
+  font-size: 0.72rem;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
 /* ── Repayment bar ── */
 .repayment-bar {
   display: flex;
