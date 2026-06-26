@@ -386,15 +386,11 @@ export default function PropertyCalculator({ propIndex }) {
               </div>
             )}
 
-            {/* Total Loan */}
-            <CurrencyField
-              label="Total Loan Amount"
-              value={totalLoan}
-              onChange={v => { setTotalLoanOverride(true); setBaseLoanOverride(true); setTotalLoanManual(v); setBaseLoanManual(v); }}
-              autoCalc
-              overrideActive={totalLoanOverride && baseLoanOverride}
-              onToggleOverride={v => { setTotalLoanOverride(v); setBaseLoanOverride(v); }}
-            />
+            {/* Total Loan — read-only display */}
+            <div className="field">
+              <label>Total Loan Amount</label>
+              <input type="text" value={fmt(totalLoan)} readOnly />
+            </div>
 
             {/* Repayment */}
             <div className="repayment-bar">
