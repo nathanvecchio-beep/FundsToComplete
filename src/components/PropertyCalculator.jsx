@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Toggle from './Toggle';
 import { CurrencyField, PercentField, SelectField } from './Field';
 import {
@@ -68,7 +68,7 @@ function EditableCell({ label, value, onChange, readOnly, subtext }) {
   );
 }
 
-export default function PropertyCalculator({ propIndex, label }) {
+export default function PropertyCalculator({ propIndex, label, onSummaryUpdate }) {
   // ── Left panel ───────────────────────────────────────────────────────────
   const [state, setState] = useState('New South Wales');
   const [propertyType, setPropertyType] = useState('Established Home');
@@ -239,6 +239,21 @@ export default function PropertyCalculator({ propIndex, label }) {
 
   const contribution = Math.max(0, fundsRequired - totalLoan);
   const surplus = totalLoan - fundsRequired;
+
+  // Push key values up so the Summary tab can display them
+  useEffect(() => {
+    onSummaryUpdate?.({
+      label: label || `Property ${propIndex + 1}`,
+      pv, totalLoan, rawBaseLoan, totalLvr, lmi, lmiActive, capLMI,
+      netStampDuty, transferFee, mortgageReg, totalGovt,
+      fees, fundsRequired, contribution, repayment,
+      stateCode, purpose, propertyType,
+      rate, term, ioTerm,
+    });
+  }, [pv, totalLoan, rawBaseLoan, totalLvr, lmi, lmiActive, capLMI,
+      netStampDuty, transferFee, mortgageReg, totalGovt,
+      fees, fundsRequired, contribution, repayment,
+      stateCode, purpose, propertyType, label, propIndex, rate, term, ioTerm]);
 
   // ── Summary bar handlers ─────────────────────────────────────────────────
   // Editing "Property Value" → clears all overrides so everything auto-recalculates
@@ -640,9 +655,8 @@ export default function PropertyCalculator({ propIndex, label }) {
         <div className="pp-header">
           <div className="pp-logo">
             <svg className="pp-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="10" y="45" width="80" height="50" rx="3" fill="#1a1a1a" />
-              <polygon points="50,5 95,48 5,48" fill="#1a1a1a" />
-              <path d="M35 95 L35 68 Q35 55 50 55 Q65 55 65 68 L65 95 Z" fill="white" />
+              <path d="M50 6 L94 46 L94 94 L6 94 L6 46 Z" fill="#1a1a1a" />
+              <path d="M37 94 L37 65 A13 13 0 0 1 63 65 L63 94 Z" fill="white" />
             </svg>
             <div className="pp-logo-text">
               <span className="pp-logo-eyebrow">Mortgage Broker Brisbane</span>
