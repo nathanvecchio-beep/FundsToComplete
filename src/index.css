@@ -1318,16 +1318,16 @@ table.stbl td.negative { color: var(--danger); font-weight: 700; }
 .lmi-waived-strip { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; }
 
 /* ── Repayment footer ── */
-.repay-footer { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-top: 1px solid var(--border); background: #fafaf9; flex-shrink: 0; }
+.repay-footer { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 2px solid #f0d97a; background: #fffbea; flex-shrink: 0; }
 .repay-field { display: flex; flex-direction: column; gap: 3px; }
-.repay-field label { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
-.repay-field input { width: 60px; border: 1.5px solid var(--border); border-radius: 7px; padding: 5px 6px; font-size: 0.85rem; font-weight: 600; text-align: center; outline: none; background: white; }
-.repay-field input:focus { border-color: var(--accent); }
-.repay-sep { color: var(--border); font-size: 1rem; margin-top: 12px; }
+.repay-field label { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a07c10; }
+.repay-field input { width: 60px; border: 1.5px solid #e8cc6a; border-radius: 7px; padding: 5px 6px; font-size: 0.85rem; font-weight: 600; text-align: center; outline: none; background: white; }
+.repay-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245,164,31,0.2); }
+.repay-sep { color: #d4b84a; font-size: 1rem; margin-top: 12px; }
 .repay-result { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.repay-label { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.repay-label { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a07c10; }
 .repay-value { font-size: 1.2rem; font-weight: 900; color: var(--primary); line-height: 1; }
-.repay-mo { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-left: 2px; }
+.repay-mo { font-size: 0.7rem; font-weight: 600; color: #a07c10; margin-left: 2px; }
 
 /* ── Cost breakdown (simple view) ── */
 .cost-body { padding: 0; }

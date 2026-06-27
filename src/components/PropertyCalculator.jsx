@@ -14,7 +14,7 @@ const STATE_CODES = { 'New South Wales':'NSW','Victoria':'VIC','Queensland':'QLD
 const PROPERTY_TYPES = ['Established Home','New Home','Vacant Land','Off the Plan'];
 const PURPOSES = ['Owner Occupied','Investment'];
 const DEFAULT_FEES = 3000;
-const DEFAULT_RATE = 5.75;
+const DEFAULT_RATE = 6.25;
 const DEFAULT_TERM = 30;
 
 function fmt(n) {
