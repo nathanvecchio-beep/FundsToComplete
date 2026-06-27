@@ -348,9 +348,9 @@ function qldTransferFee(v) {
   return Math.round((238.14 + 44.71 * Math.ceil((v - 180000) / 10000)) * 100) / 100;
 }
 
-// VIC: sliding scale capped at $3,607 (approximate — confirm via Land Use Victoria)
+// VIC: sliding scale capped at $3,611 (electronic lodgement, 2025-26 — Land Use Victoria)
 function vicTransferFee(v) {
-  return Math.min(Math.round((101.50 + 2.34 * Math.ceil(v / 1000)) * 100) / 100, 3607);
+  return Math.min(Math.round((101.50 + 2.34 * Math.ceil(v / 1000)) * 100) / 100, 3611);
 }
 
 export function calculateTransferFee(stateCode, propertyValue) {
@@ -364,7 +364,7 @@ export function calculateTransferFee(stateCode, propertyValue) {
     case 'SA':  return saTransferFee(v);
     case 'TAS': return 250.21;
     case 'ACT': return 479.00;
-    case 'NT':  return 156.00; // approximate — verify with NT Land Titles Office
+    case 'NT':  return 176.00; // NT Land Titles Office flat fee (nt.gov.au verified 2025-26)
     default: return 0;
   }
 }
@@ -374,13 +374,13 @@ export function calculateMortgageRegistration(stateCode, loanAmount) {
   if (!v) return 0;
   switch (stateCode) {
     case 'NSW': return 175.70;
-    case 'VIC': return 125.70; // approximate — confirm via Land Use Victoria
+    case 'VIC': return 125.70; // Land Use Victoria 2025-26 (electronic lodgement)
     case 'QLD': return 238.14; // FY2025-26
     case 'WA':  return 216.60;
     case 'SA':  return 198.00;
     case 'TAS': return 163.30;
     case 'ACT': return 178.00;
-    case 'NT':  return 156.00; // approximate
+    case 'NT':  return 176.00; // NT Land Titles Office flat fee (nt.gov.au verified 2025-26)
     default: return 0;
   }
 }
