@@ -120,7 +120,10 @@ body {
   flex: 1;
 }
 .prop-tab {
-  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 11px 12px 11px 16px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -132,6 +135,29 @@ body {
   white-space: nowrap;
 }
 .prop-tab.active { color: var(--primary); border-bottom-color: var(--accent); font-weight: 700; }
+.prop-tab-edit {
+  font-size: 0.75rem;
+  opacity: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 1px 3px;
+  border-radius: 3px;
+  transition: opacity 0.15s;
+}
+.prop-tab:hover .prop-tab-edit,
+.prop-tab.active .prop-tab-edit { opacity: 0.6; }
+.prop-tab-edit:hover { opacity: 1 !important; background: var(--surface2); }
+.prop-tab-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+  width: 140px;
+  border-bottom: 1.5px solid var(--accent);
+  padding: 0 2px;
+}
 .prop-tab-add { padding: 10px 10px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.2rem; }
 .prop-tab-link { padding: 10px 10px; background: none; border: none; cursor: pointer; color: var(--text-muted); margin-left: auto; }
 

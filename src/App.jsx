@@ -1,14 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import PropertyCalculator from './components/PropertyCalculator';
 
-// Hunter Galloway logo mark — house silhouette with arch doorway cutout
-function HGMark({ size = 38, fillColour = '#F5A41F', cutColour = '#1a1a1a' }) {
+// Hunter Galloway logo mark — accurate recreation of the HG house icon
+function HGMark({ size = 38, fillColour = '#1a1a1a', cutColour = 'white' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Full house silhouette: roof peak at top-centre, walls down to base */}
-      <path d="M50 6 L94 46 L94 94 L6 94 L6 46 Z" fill={fillColour} />
-      {/* Arch doorway cut-out — rectangle with semicircle top */}
-      <path d="M37 94 L37 65 A13 13 0 0 1 63 65 L63 94 Z" fill={cutColour} />
+      {/* House silhouette: peak slightly left of centre, rectangular notch on right */}
+      <path d="M8 95 L8 46 L47 7 L92 46 L92 95 Z" fill={fillColour} />
+      {/* Rectangular cutout on right side — tall door/window shape */}
+      <rect x="57" y="52" width="23" height="43" fill={cutColour} />
     </svg>
   );
 }
@@ -57,10 +57,10 @@ export default function App() {
   const [properties, setProperties] = useState([{ id: 1, label: 'Property 1' }]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [activeTab, setActiveTab] = useState('calculator');
-  // Holds the live summary data from each PropertyCalculator
   const [summaries, setSummaries] = useState({});
-  // initialValues per property index (for URL share restore)
   const [initialValues, setInitialValues] = useState([]);
+  const [editingTabId, setEditingTabId] = useState(null);
+  const [editingLabel, setEditingLabel] = useState('');
 
   // Parse URL share param on mount
   useEffect(() => {
@@ -88,6 +88,18 @@ export default function App() {
     setActiveIdx(properties.length);
   };
 
+  const renameProperty = useCallback((id, newLabel) => {
+    setProperties(p => p.map(prop => prop.id === id ? { ...prop, label: newLabel.trim() || prop.label } : prop));
+    setEditingTabId(null);
+  }, []);
+
+  const startEditTab = (e, p, i) => {
+    e.stopPropagation();
+    setActiveIdx(i);
+    setEditingTabId(p.id);
+    setEditingLabel(p.label);
+  };
+
   const handleSummaryUpdate = useCallback((id, data) => {
     setSummaries(prev => ({ ...prev, [id]: data }));
   }, []);
@@ -97,7 +109,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-header-left">
           <div className="hg-logo">
-            <HGMark size={38} fillColour="#F5A41F" cutColour="#1a1a1a" />
+            <HGMark size={38} fillColour="white" cutColour="#1a1a1a" />
             <div className="hg-logo-text">
               <span className="hg-logo-eyebrow">Mortgage Broker Brisbane</span>
               <span className="hg-logo-name">Hunter <span>Galloway</span></span>
@@ -121,9 +133,27 @@ export default function App() {
       <div className="property-tabs-bar">
         <div className="property-tabs">
           {activeTab === 'calculator' && properties.map((p, i) => (
-            <button key={p.id} className={`prop-tab ${i === activeIdx ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>
-              {p.label}
-            </button>
+            <div key={p.id} className={`prop-tab ${i === activeIdx ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>
+              {editingTabId === p.id ? (
+                <input
+                  className="prop-tab-input"
+                  autoFocus
+                  value={editingLabel}
+                  onChange={e => setEditingLabel(e.target.value)}
+                  onBlur={() => renameProperty(p.id, editingLabel)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') renameProperty(p.id, editingLabel);
+                    if (e.key === 'Escape') setEditingTabId(null);
+                  }}
+                  onClick={e => e.stopPropagation()}
+                />
+              ) : (
+                <>
+                  <span>{p.label}</span>
+                  <span className="prop-tab-edit" title="Rename" onClick={e => startEditTab(e, p, i)}>✎</span>
+                </>
+              )}
+            </div>
           ))}
           {activeTab === 'calculator' && (
             <button className="prop-tab-add" onClick={addProperty} title="Add property">+</button>
@@ -305,8 +335,8 @@ function SummaryView({ properties, summaries }) {
         <div className="pp-header">
           <div className="pp-logo">
             <svg className="pp-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M50 6 L94 46 L94 94 L6 94 L6 46 Z" fill="#1a1a1a" />
-              <path d="M37 94 L37 65 A13 13 0 0 1 63 65 L63 94 Z" fill="white" />
+              <path d="M8 95 L8 46 L47 7 L92 46 L92 95 Z" fill="#1a1a1a" />
+              <rect x="57" y="52" width="23" height="43" fill="white" />
             </svg>
             <div className="pp-logo-text">
               <span className="pp-logo-eyebrow">Mortgage Broker Brisbane</span>
