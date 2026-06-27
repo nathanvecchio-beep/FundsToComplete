@@ -109,11 +109,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-header-left">
           <div className="hg-logo">
-            <HGMark size={38} fillColour="white" cutColour="#1a1a1a" />
-            <div className="hg-logo-text">
-              <span className="hg-logo-eyebrow">Mortgage Broker Brisbane</span>
-              <span className="hg-logo-name">Hunter <span>Galloway</span></span>
-            </div>
+            <img src="/hg-logo.png" alt="Hunter Galloway" className="hg-logo-img" />
           </div>
           <h1>Funds to Complete</h1>
         </div>
@@ -334,14 +330,7 @@ function SummaryView({ properties, summaries }) {
       <div className="summary-print-page">
         <div className="pp-header">
           <div className="pp-logo">
-            <svg className="pp-logo-mark" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 95 L8 46 L47 7 L92 46 L92 95 Z" fill="#1a1a1a" />
-              <rect x="57" y="52" width="23" height="43" fill="white" />
-            </svg>
-            <div className="pp-logo-text">
-              <span className="pp-logo-eyebrow">Mortgage Broker Brisbane</span>
-              <span className="pp-logo-name">Hunter <span>Galloway</span></span>
-            </div>
+            <img src="/hg-logo.png" alt="Hunter Galloway" style={{ height: 44, width: 'auto' }} />
           </div>
           <div className="pp-header-right">
             <div className="pp-doc-title">Property Comparison</div>

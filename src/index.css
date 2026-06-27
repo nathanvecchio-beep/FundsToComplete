@@ -48,11 +48,8 @@ body {
 .app-header-right { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 
 /* Hunter Galloway logo */
-.hg-logo { display: flex; align-items: center; gap: 12px; }
-.hg-logo-text { display: flex; flex-direction: column; line-height: 1; }
-.hg-logo-eyebrow { font-size: 0.55rem; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1px; }
-.hg-logo-name { font-size: 1.05rem; font-weight: 800; color: white; letter-spacing: -0.01em; }
-.hg-logo-name span { color: var(--accent); }
+.hg-logo { display: flex; align-items: center; }
+.hg-logo-img { height: 34px; width: auto; filter: invert(1) brightness(2); }
 
 .app-body {
   max-width: 1280px;
