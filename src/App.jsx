@@ -93,7 +93,7 @@ export default function App() {
   }, []);
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <header className="app-header">
         <div className="app-header-left">
           <div className="hg-logo">
@@ -105,29 +105,42 @@ export default function App() {
           </div>
           <h1>Funds to Complete</h1>
         </div>
-        <div className="app-header-right">huntergalloway.com.au &nbsp;·&nbsp; 1300 088 065</div>
+        <div className="app-header-right" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <CopyLinkButton summaries={summaries} properties={properties} />
+          <button className="print-btn" style={{ margin: 0 }} onClick={() => window.print()}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Save PDF
+          </button>
+        </div>
       </header>
 
-      <div className="app-body">
-        <div className="tabs">
-          <button className={`tab-btn ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')}>Calculator</button>
-          <button className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`} onClick={() => setActiveTab('summary')}>Summary</button>
-        </div>
-
-        {activeTab === 'calculator' && (
-          <div className="property-tabs">
-            {properties.map((p, i) => (
-              <button key={p.id} className={`prop-tab ${i === activeIdx ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>
-                {p.label}
-              </button>
-            ))}
+      {/* Property tabs bar */}
+      <div className="property-tabs-bar">
+        <div className="property-tabs">
+          {activeTab === 'calculator' && properties.map((p, i) => (
+            <button key={p.id} className={`prop-tab ${i === activeIdx ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>
+              {p.label}
+            </button>
+          ))}
+          {activeTab === 'calculator' && (
             <button className="prop-tab-add" onClick={addProperty} title="Add property">+</button>
-          </div>
-        )}
+          )}
+        </div>
+        <button
+          className={`compare-all-btn ${activeTab === 'summary' ? 'active' : ''}`}
+          onClick={() => setActiveTab(activeTab === 'summary' ? 'calculator' : 'summary')}
+        >
+          {activeTab === 'summary' ? '← Back' : 'Compare All →'}
+        </button>
+      </div>
 
+      <div style={{ flex: 1, overflow: 'hidden' }}>
         {/* All calculators stay mounted — only active one is visible — preserves inputs */}
         {properties.map((p, i) => (
-          <div key={p.id} style={{ display: activeTab === 'calculator' && i === activeIdx ? 'block' : 'none' }}>
+          <div key={p.id} style={{ display: activeTab === 'calculator' && i === activeIdx ? 'flex' : 'none', height: '100%', flexDirection: 'column' }}>
             <PropertyCalculator
               propIndex={i}
               label={p.label}
@@ -139,7 +152,9 @@ export default function App() {
 
         {/* Summary tab */}
         {activeTab === 'summary' && (
-          <SummaryView properties={properties} summaries={summaries} />
+          <div className="app-body" style={{ height: '100%', overflowY: 'auto' }}>
+            <SummaryView properties={properties} summaries={summaries} />
+          </div>
         )}
       </div>
     </div>
