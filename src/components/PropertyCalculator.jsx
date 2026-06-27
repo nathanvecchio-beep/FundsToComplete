@@ -26,6 +26,26 @@ function fmtPct(n, dec = 2) {
   return Number(n).toFixed(dec) + '%';
 }
 
+// Dollar input that displays with comma formatting while editing
+function DollarInput({ value, onChange, className }) {
+  const [focused, setFocused] = useState(false);
+  const [raw, setRaw] = useState('');
+  const onFocus = () => { setRaw(value > 0 ? String(value) : ''); setFocused(true); };
+  const onBlur = () => { const n = Number(raw.replace(/[^0-9.]/g, '')); onChange(isNaN(n) ? 0 : n); setFocused(false); };
+  const display = focused ? raw : (value > 0 ? Number(value).toLocaleString() : '');
+  return (
+    <input
+      className={className}
+      type="text"
+      inputMode="numeric"
+      value={display}
+      onFocus={onFocus}
+      onChange={e => setRaw(e.target.value)}
+      onBlur={onBlur}
+    />
+  );
+}
+
 // Sidebar toggle row
 function SbToggle({ label, sub, checked, onChange, disabled, info }) {
   return (
@@ -487,9 +507,9 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   displayValue={fmt(depositOverride ? depositManual : contribution)}
                   overrideActive={depositOverride}
                   overrideInput={depositOverride ? (
-                    <input className="loan-override-input" type="number" value={depositManual}
-                      onChange={e => {
-                        setDepositManual(Number(e.target.value));
+                    <DollarInput className="loan-override-input" value={depositManual}
+                      onChange={v => {
+                        setDepositManual(v);
                         setDepositOverride(true);
                         setBaseLoanOverride(false); setBaseLvrOverride(false); setTotalLoanOverride(false);
                       }} />
@@ -521,9 +541,9 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   displayValue={fmt(rawBaseLoan)}
                   overrideActive={baseLoanOverride}
                   overrideInput={baseLoanOverride ? (
-                    <input className="loan-override-input" type="number" value={baseLoanManual}
-                      onChange={e => {
-                        setBaseLoanManual(Number(e.target.value)); setBaseLoanOverride(true);
+                    <DollarInput className="loan-override-input" value={baseLoanManual}
+                      onChange={v => {
+                        setBaseLoanManual(v); setBaseLoanOverride(true);
                         setDepositOverride(false); setDepositManual(0);
                       }} />
                   ) : null}
@@ -631,7 +651,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   {stampDutyConc > 0 && govtChargesOn && (
                     <CostRow label="Stamp Duty Concession" value={`−${fmt(stampDutyConc)}`} valueClass="cost-val-success" />
                   )}
-                  <CostRow label="Transfer &amp; Registration" value={govtChargesOn ? `$${(transferFee + mortgageReg).toFixed(2)}` : '—'} />
+                  <CostRow label="Transfer &amp; Registration" value={govtChargesOn ? fmt(transferFee + mortgageReg) : '—'} />
                   <CostRow label="Legal &amp; Bank Fees" value={fmt(fees)} />
                   {ratesAdj > 0 && <CostRow label="Rates Adjustment" value={fmt(ratesAdj)} />}
                   {!capLMI && lmi > 0 && <CostRow label="LMI (upfront payment)" value={fmt(lmi)} valueClass="cost-val-lmi" />}
@@ -796,7 +816,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             </div>
             <div className="pp-row">
               <span className="pp-row-label">Transfer &amp; Registration Fees</span>
-              <span className="pp-row-value">${(transferFee + mortgageReg).toFixed(2)}</span>
+              <span className="pp-row-value">{fmt(transferFee + mortgageReg)}</span>
             </div>
             <div className="pp-row">
               <span className="pp-row-label">Legal &amp; Bank Fees</span>
