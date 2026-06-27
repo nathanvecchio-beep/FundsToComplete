@@ -105,7 +105,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [foreignBuyer, setForeignBuyer] = useState(initialValues?.foreignBuyer || false);
 
   // ── LMI waivers ─────────────────────────────────────────────────────────
-  const [lmiOpen, setLmiOpen] = useState(true);
+  const [lmiOpen, setLmiOpen] = useState(false);
+  const [costsOpen, setCostsOpen] = useState(false);
   const [fhgScheme, setFhgScheme] = useState(false);
   const [profLmi, setProfLmi] = useState(false);
   const [famGuarantor, setFamGuarantor] = useState(false);
@@ -357,72 +358,78 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           </div>
 
           <div className="sb-section">
-            <div className="sb-section-label">Costs &amp; Fees</div>
-            <SbToggle
-              label="Include Govt Charges"
-              sub="Stamp duty, transfer &amp; reg"
-              checked={govtChargesOn}
-              onChange={setGovtChargesOn}
-            />
-            {firstHome && (
-              <SbToggle
-                label={`FHOG Grant ($${(FHOG_AMOUNTS[stateCode] || 0).toLocaleString()})`}
-                sub={isNewBuild ? 'Applied as cash reduction' : 'New/OTP homes only in ' + stateCode}
-                checked={includeFhog}
-                onChange={setIncludeFhog}
-              />
-            )}
-            {includeFhog && (
-              <div className="sb-sub-input">
-                <span>Grant Amount</span>
-                <input type="number" value={fhogOverride ? fhogManual : autoFhog}
-                  onChange={e => { setFhogOverride(true); setFhogManual(Number(e.target.value)); }} />
-              </div>
-            )}
-            <SbToggle
-              label="Rates Adjustment"
-              sub="Council/water at settlement"
-              checked={includeRates}
-              onChange={setIncludeRates}
-              info="Buyers typically reimburse seller for prepaid council/water rates. Usually $500–$1,500."
-            />
-            {includeRates && (
-              <div className="sb-sub-input">
-                <span>Amount</span>
-                <input type="number" value={ratesAmount} onChange={e => setRatesAmount(Number(e.target.value))} />
-              </div>
-            )}
-            <SbToggle
-              label="Itemise Fees"
-              sub="Break down individual costs"
-              checked={useDetailedFees}
-              onChange={setUseDetailedFees}
-            />
-            {useDetailedFees && (
-              <div className="sb-fee-list">
-                {[['Conveyancer', conveyancerFee, setConveyancerFee],
-                  ['Bank Fees', bankFee, setBankFee],
-                  ['Building Inspection', buildingInspection, setBuildingInspection],
-                  ['Pest Inspection', pestInspection, setPestInspection],
-                  ['Other', otherFees, setOtherFees]].map(([lbl, val, setter]) => (
-                  <div key={lbl} className="sb-fee-row">
-                    <span>{lbl}</span>
-                    <input type="number" value={val} onChange={e => setter(Number(e.target.value))} />
+            <div className="sb-section-label sb-collapsible" onClick={() => setCostsOpen(v => !v)}>
+              Costs &amp; Fees <span className={`sb-chevron ${costsOpen ? 'open' : ''}`}>▾</span>
+            </div>
+            {costsOpen && (
+              <>
+                <SbToggle
+                  label="Include Govt Charges"
+                  sub="Stamp duty, transfer &amp; reg"
+                  checked={govtChargesOn}
+                  onChange={setGovtChargesOn}
+                />
+                {firstHome && (
+                  <SbToggle
+                    label={`FHOG Grant ($${(FHOG_AMOUNTS[stateCode] || 0).toLocaleString()})`}
+                    sub={isNewBuild ? 'Applied as cash reduction' : 'New/OTP homes only in ' + stateCode}
+                    checked={includeFhog}
+                    onChange={setIncludeFhog}
+                  />
+                )}
+                {includeFhog && (
+                  <div className="sb-sub-input">
+                    <span>Grant Amount</span>
+                    <input type="number" value={fhogOverride ? fhogManual : autoFhog}
+                      onChange={e => { setFhogOverride(true); setFhogManual(Number(e.target.value)); }} />
                   </div>
-                ))}
-              </div>
-            )}
-            <SbToggle
-              label="Override LMI"
-              sub="Enter exact LMI amount"
-              checked={overrideLMI}
-              onChange={setOverrideLMI}
-            />
-            {overrideLMI && (
-              <div className="sb-sub-input">
-                <span>LMI Amount</span>
-                <input type="number" value={lmiManualAmt} onChange={e => setLmiManualAmt(Number(e.target.value))} />
-              </div>
+                )}
+                <SbToggle
+                  label="Rates Adjustment"
+                  sub="Council/water at settlement"
+                  checked={includeRates}
+                  onChange={setIncludeRates}
+                  info="Buyers typically reimburse seller for prepaid council/water rates. Usually $500–$1,500."
+                />
+                {includeRates && (
+                  <div className="sb-sub-input">
+                    <span>Amount</span>
+                    <input type="number" value={ratesAmount} onChange={e => setRatesAmount(Number(e.target.value))} />
+                  </div>
+                )}
+                <SbToggle
+                  label="Itemise Fees"
+                  sub="Break down individual costs"
+                  checked={useDetailedFees}
+                  onChange={setUseDetailedFees}
+                />
+                {useDetailedFees && (
+                  <div className="sb-fee-list">
+                    {[['Conveyancer', conveyancerFee, setConveyancerFee],
+                      ['Bank Fees', bankFee, setBankFee],
+                      ['Building Inspection', buildingInspection, setBuildingInspection],
+                      ['Pest Inspection', pestInspection, setPestInspection],
+                      ['Other', otherFees, setOtherFees]].map(([lbl, val, setter]) => (
+                      <div key={lbl} className="sb-fee-row">
+                        <span>{lbl}</span>
+                        <input type="number" value={val} onChange={e => setter(Number(e.target.value))} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <SbToggle
+                  label="Override LMI"
+                  sub="Enter exact LMI amount"
+                  checked={overrideLMI}
+                  onChange={setOverrideLMI}
+                />
+                {overrideLMI && (
+                  <div className="sb-sub-input">
+                    <span>LMI Amount</span>
+                    <input type="number" value={lmiManualAmt} onChange={e => setLmiManualAmt(Number(e.target.value))} />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
