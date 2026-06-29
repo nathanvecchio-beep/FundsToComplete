@@ -392,8 +392,22 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               </div>
             </div>
 
-            <SelectField label="State" value={state} onChange={setState}
-              options={STATES.map(s => ({ value: s, label: s }))} />
+            {/* State pill picker */}
+          <div style={{ marginBottom: 14 }}>
+            <label className="sb-field-label">State / Territory</label>
+            <div className="state-pill-grid">
+              {Object.entries(STATE_CODES).map(([full, code]) => (
+                <button
+                  key={code}
+                  className={`state-pill${state === full ? ' state-pill-active' : ''}`}
+                  onClick={() => setState(full)}
+                  title={full}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
+          </div>
             <SelectField label="Property Type" value={propertyType} onChange={setPropertyType}
               options={PROPERTY_TYPES} />
             <SelectField label="Purpose" value={purpose} onChange={setPurpose}
@@ -566,6 +580,21 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
         {/* RIGHT CONTENT */}
         <div className="calc-right">
+
+          {/* LMI ALERT BANNER — only shown when LMI applies */}
+          {lmiActive && pv > 0 && (
+            <div className="lmi-alert-banner">
+              <div className="lmi-alert-icon">⚠</div>
+              <div className="lmi-alert-body">
+                <div className="lmi-alert-title">Lenders Mortgage Insurance applies at {fmtPct(totalLvr, 1)} LVR</div>
+                <div className="lmi-alert-sub">
+                  Your deposit is below 20% of the property value. LMI protects the lender — not you — and adds {fmt(lmi)} to your loan.
+                  Increase your deposit to ≥20% ({fmt(Math.ceil(pv * 0.2))}) or explore an LMI waiver below.
+                </div>
+              </div>
+              <div className="lmi-alert-amount">{fmt(lmi)}</div>
+            </div>
+          )}
 
           {/* HERO SECTION */}
           <div className="hero-section">

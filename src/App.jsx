@@ -252,35 +252,72 @@ function SummaryView({ properties, summaries }) {
         </div>
       </div>
 
-      <div className={`summary-cards-grid summary-cards-${cols.length}`}>
-        {cols.map((c, i) => (
-          <div key={i} className="summary-prop-card">
-            <div className="spc-label">{c.label}</div>
-            <div className="spc-meta">{c.stateCode} · {c.purpose}</div>
-            <div className="spc-cash">{fmt(c.contribution)}</div>
-            <div className="spc-cash-label">Cash Required</div>
-            <div className="spc-funds-req">Total Funds Required: {fmt(c.fundsRequired)}</div>
-            <div className="spc-stats">
-              <div className="spc-stat">
-                <div className="spc-stat-label">Property Value</div>
-                <div className="spc-stat-value">{fmt(c.pv)}</div>
-              </div>
-              <div className="spc-stat">
-                <div className="spc-stat-label">Loan Amount</div>
-                <div className="spc-stat-value">{fmt(c.totalLoan)}</div>
-              </div>
-              <div className="spc-stat">
-                <div className="spc-stat-label">LVR</div>
-                <div className={`spc-stat-value ${c.lmiActive ? 'spc-stat-warn' : ''}`}>{fmtPct(c.totalLvr)}</div>
-              </div>
-            </div>
-            {c.lmiActive
-              ? <div className="spc-lmi-badge spc-lmi-active">⚠ LMI — {fmt(c.lmi)}</div>
-              : c.pv > 0 ? <div className="spc-lmi-badge spc-lmi-clear">✓ No LMI</div> : null
-            }
+      {/* Determine which property has the lowest cash required */}
+      {(() => {
+        const minCash = Math.min(...cols.filter(c => c.pv > 0).map(c => c.contribution));
+        return (
+          <div className={`summary-cards-grid summary-cards-${cols.length}`}>
+            {cols.map((c, i) => {
+              const isLowest = c.pv > 0 && c.contribution === minCash && cols.filter(x => x.pv > 0).length > 1;
+              const totalBar = c.contribution;
+              const depositPct = totalBar > 0 ? ((c.contribution - (c.totalGovt + c.fees)) / totalBar * 100) : 70;
+              const govtPct   = totalBar > 0 ? (c.totalGovt / totalBar * 100) : 20;
+              const feesPct   = totalBar > 0 ? (c.fees / totalBar * 100) : 10;
+              const lmiPct    = (totalBar > 0 && c.lmiActive && !c.capLMI) ? (c.lmi / totalBar * 100) : 0;
+              return (
+                <div key={i} className={`summary-prop-card ${isLowest ? 'spc-winner' : ''}`}>
+                  <div className="spc-header">
+                    <div>
+                      <div className="spc-label">{c.label}</div>
+                      <div className="spc-meta">{c.stateCode} · {c.purpose} · {c.propertyType}</div>
+                    </div>
+                    {isLowest && <div className="spc-winner-badge">✓ Lowest</div>}
+                  </div>
+                  <div className="spc-cash">{fmt(c.contribution)}</div>
+                  <div className="spc-cash-label">Cash to complete</div>
+
+                  {/* Mini funds bar */}
+                  {c.pv > 0 && (
+                    <div className="spc-mini-bar">
+                      <div style={{ background: 'var(--primary)', height: '100%', width: `${depositPct}%`, borderRadius: '3px 0 0 3px' }} />
+                      <div style={{ background: 'var(--accent)', height: '100%', width: `${govtPct}%` }} />
+                      <div style={{ background: '#e8e0d4', height: '100%', width: `${feesPct}%` }} />
+                      {lmiPct > 0 && <div style={{ background: '#fbbf24', height: '100%', width: `${lmiPct}%`, borderRadius: '0 3px 3px 0' }} />}
+                    </div>
+                  )}
+
+                  <div className="spc-stats">
+                    <div className="spc-stat">
+                      <div className="spc-stat-label">Property Value</div>
+                      <div className="spc-stat-value">{fmt(c.pv)}</div>
+                    </div>
+                    <div className="spc-stat">
+                      <div className="spc-stat-label">Loan Amount</div>
+                      <div className="spc-stat-value">{fmt(c.totalLoan)}</div>
+                    </div>
+                    <div className="spc-stat">
+                      <div className="spc-stat-label">LVR</div>
+                      <div className={`spc-stat-value ${c.lmiActive ? 'spc-stat-warn' : ''}`}>{fmtPct(c.totalLvr)}</div>
+                    </div>
+                    <div className="spc-stat">
+                      <div className="spc-stat-label">Stamp Duty</div>
+                      <div className="spc-stat-value">{fmt(c.netStampDuty)}</div>
+                    </div>
+                    <div className="spc-stat">
+                      <div className="spc-stat-label">Est. Repayment</div>
+                      <div className="spc-stat-value">{fmt(c.repayment)}/mo</div>
+                    </div>
+                  </div>
+                  {c.lmiActive
+                    ? <div className="spc-lmi-badge spc-lmi-active">⚠ LMI — {fmt(c.lmi)}</div>
+                    : c.pv > 0 ? <div className="spc-lmi-badge spc-lmi-clear">✓ No LMI</div> : null
+                  }
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* ── Detailed Comparison Table ── */}
       <div className="summary-table-card">
