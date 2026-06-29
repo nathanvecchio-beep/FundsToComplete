@@ -245,20 +245,36 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [ratesAmount, setRatesAmount] = useState(800);
 
   // ── Extra funds (sale proceeds, gifts, etc.) ─────────────────────────────
-  const FUND_TYPES = ['Sale Proceeds', 'Gift / Family', 'Inheritance', 'Shares / Investments', 'Other'];
-  const DEBT_TYPES = ['Credit Card', 'Personal Loan', 'Car Loan', 'HECS / HELP Debt', 'Other Debt'];
   const [extraFunds, setExtraFunds] = useState([]);
-  const addExtraFund = () => setExtraFunds(f => [...f, { id: Date.now(), type: 'Sale Proceeds', amount: 0 }]);
   const removeExtraFund = (id) => setExtraFunds(f => f.filter(x => x.id !== id));
   const updateExtraFund = (id, field, value) => setExtraFunds(f => f.map(x => x.id === id ? { ...x, [field]: value } : x));
   const extraFundsTotal = extraFunds.reduce((s, f) => s + (Number(f.amount) || 0), 0);
+  // Draft row state for always-visible add row
+  const [draftFundLabel, setDraftFundLabel] = useState('');
+  const [draftFundAmount, setDraftFundAmount] = useState(0);
+  const commitDraftFund = () => {
+    if (draftFundLabel.trim()) {
+      setExtraFunds(f => [...f, { id: Date.now(), label: draftFundLabel.trim(), amount: draftFundAmount }]);
+      setDraftFundLabel('');
+      setDraftFundAmount(0);
+    }
+  };
 
   // ── Debts to close ────────────────────────────────────────────────────────
   const [debts, setDebts] = useState([]);
-  const addDebt = () => setDebts(d => [...d, { id: Date.now(), type: 'Credit Card', amount: 0 }]);
   const removeDebt = (id) => setDebts(d => d.filter(x => x.id !== id));
   const updateDebt = (id, field, value) => setDebts(d => d.map(x => x.id === id ? { ...x, [field]: value } : x));
   const debtsTotal = debts.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  // Draft row for debts
+  const [draftDebtLabel, setDraftDebtLabel] = useState('');
+  const [draftDebtAmount, setDraftDebtAmount] = useState(0);
+  const commitDraftDebt = () => {
+    if (draftDebtLabel.trim()) {
+      setDebts(d => [...d, { id: Date.now(), label: draftDebtLabel.trim(), amount: draftDebtAmount }]);
+      setDraftDebtLabel('');
+      setDraftDebtAmount(0);
+    }
+  };
 
   const stateCode = STATE_CODES[state] || 'NSW';
   const lmiWaived = fhgScheme || profLmi || famGuarantor;
@@ -662,29 +678,61 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           {pv > 0 && (
             <div className="funding-summary-card">
               <div className="fsc-table">
+
                 {/* LEFT — Funds Available */}
                 <div className="fsc-col">
                   <div className="fsc-col-head-row">
                     <div className="fsc-col-head">Funds Available</div>
-                    <button className="fsc-add-btn" onClick={addExtraFund}>+ Fund</button>
                   </div>
-                  <div className="fsc-row"><span>Savings / Deposit</span><span>{fmt(cashToComplete)}</span></div>
+                  {/* Editable savings/deposit row */}
+                  <div className="fsc-row fsc-row-editable">
+                    <span>Savings / Deposit</span>
+                    <span className="fsc-edit-amount">
+                      <span className="fsc-edit-dollar">$</span>
+                      <DollarInput
+                        className="fsc-edit-input"
+                        value={cashToComplete}
+                        onChange={v => handleDepositChange(Math.max(0, v - upfrontCosts))}
+                        placeholder="0"
+                      />
+                    </span>
+                  </div>
+                  {/* Saved extra funds */}
                   {extraFunds.map(f => (
-                    <div key={f.id} className="fsc-input-row">
-                      <select className="fsc-type-select" value={f.type} onChange={e => updateExtraFund(f.id, 'type', e.target.value)}>
-                        {FUND_TYPES.map(t => <option key={t}>{t}</option>)}
-                      </select>
-                      <div className="fsc-input-right">
-                        <span className="fsc-input-dollar">$</span>
-                        <DollarInput className="fsc-amount-input" value={f.amount} onChange={v => updateExtraFund(f.id, 'amount', v)} placeholder="0" />
+                    <div key={f.id} className="fsc-row fsc-row-extra">
+                      <input
+                        className="fsc-label-input"
+                        value={f.label}
+                        onChange={e => updateExtraFund(f.id, 'label', e.target.value)}
+                      />
+                      <span className="fsc-edit-amount">
+                        <span className="fsc-edit-dollar">$</span>
+                        <DollarInput className="fsc-edit-input" value={f.amount} onChange={v => updateExtraFund(f.id, 'amount', v)} placeholder="0" />
                         <button className="fsc-del-btn" onClick={() => removeExtraFund(f.id)}>✕</button>
-                      </div>
+                      </span>
                     </div>
                   ))}
-                  {extraFunds.length === 0 && <>
-                    <div className="fsc-row fsc-row-empty"><span>Sale Proceeds</span><span>—</span></div>
-                    <div className="fsc-row fsc-row-empty"><span>Gift / Other</span><span>—</span></div>
-                  </>}
+                  {/* Always-visible draft add row */}
+                  <div className="fsc-draft-row">
+                    <span className="fsc-draft-plus">+</span>
+                    <input
+                      className="fsc-draft-label"
+                      value={draftFundLabel}
+                      placeholder="Add a fund source…"
+                      onChange={e => setDraftFundLabel(e.target.value)}
+                      onBlur={commitDraftFund}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
+                    />
+                    <span className="fsc-edit-amount fsc-draft-amount">
+                      <span className="fsc-edit-dollar">$</span>
+                      <DollarInput
+                        className="fsc-edit-input"
+                        value={draftFundAmount}
+                        onChange={v => setDraftFundAmount(v)}
+                        placeholder="0"
+                      />
+                    </span>
+                  </div>
                   <div className="fsc-total"><span>Total Available</span><span>{fmt(totalAvailable)}</span></div>
                 </div>
 
@@ -701,23 +749,44 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   {fhog > 0 && <div className="fsc-row fsc-row-credit"><span>FHOG Grant</span><span>−{fmt(fhog)}</span></div>}
 
                   {/* Debts to Close */}
-                  <div className="fsc-debts-header">
+                  <div className="fsc-debts-divider">
                     <span className="fsc-debts-label">Debts to Close</span>
-                    <button className="fsc-add-btn fsc-add-debt-btn" onClick={addDebt}>+ Debt</button>
                   </div>
                   {debts.map(d => (
-                    <div key={d.id} className="fsc-input-row">
-                      <select className="fsc-type-select" value={d.type} onChange={e => updateDebt(d.id, 'type', e.target.value)}>
-                        {DEBT_TYPES.map(t => <option key={t}>{t}</option>)}
-                      </select>
-                      <div className="fsc-input-right">
-                        <span className="fsc-input-dollar">$</span>
-                        <DollarInput className="fsc-amount-input" value={d.amount} onChange={v => updateDebt(d.id, 'amount', v)} placeholder="0" />
+                    <div key={d.id} className="fsc-row fsc-row-extra">
+                      <input
+                        className="fsc-label-input"
+                        value={d.label}
+                        onChange={e => updateDebt(d.id, 'label', e.target.value)}
+                      />
+                      <span className="fsc-edit-amount">
+                        <span className="fsc-edit-dollar">$</span>
+                        <DollarInput className="fsc-edit-input" value={d.amount} onChange={v => updateDebt(d.id, 'amount', v)} placeholder="0" />
                         <button className="fsc-del-btn" onClick={() => removeDebt(d.id)}>✕</button>
-                      </div>
+                      </span>
                     </div>
                   ))}
-                  {debts.length === 0 && <div className="fsc-row fsc-row-empty"><span>No debts to close</span><span>—</span></div>}
+                  {/* Always-visible draft add row for debts */}
+                  <div className="fsc-draft-row fsc-draft-row-debt">
+                    <span className="fsc-draft-plus fsc-draft-plus-debt">+</span>
+                    <input
+                      className="fsc-draft-label"
+                      value={draftDebtLabel}
+                      placeholder="Add a debt to close…"
+                      onChange={e => setDraftDebtLabel(e.target.value)}
+                      onBlur={commitDraftDebt}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
+                    />
+                    <span className="fsc-edit-amount fsc-draft-amount">
+                      <span className="fsc-edit-dollar">$</span>
+                      <DollarInput
+                        className="fsc-edit-input"
+                        value={draftDebtAmount}
+                        onChange={v => setDraftDebtAmount(v)}
+                        placeholder="0"
+                      />
+                    </span>
+                  </div>
 
                   <div className="fsc-total"><span>Total Required</span><span>{fmt(totalRequired)}</span></div>
                 </div>
