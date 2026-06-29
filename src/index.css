@@ -846,13 +846,11 @@ body {
 /* ── HERO SECTION ── */
 .hero-section {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.hero-main { flex: 1; min-width: 0; }
+.hero-main { width: 100%; }
 
 .hero-gold-label {
   font-size: 0.65rem;
@@ -880,23 +878,20 @@ body {
   font-size: 0.875rem;
   color: var(--text-muted);
   line-height: 1.5;
-  max-width: 460px;
 }
 
-/* Stat cards */
+/* Stat cards — horizontal row below hero */
 .hero-stat-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .hero-stat-card {
   background: white;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 16px;
-  min-width: 180px;
+  padding: 12px 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
