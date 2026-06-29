@@ -480,26 +480,17 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               <label className="sb-field-label">CASH TO COMPLETE</label>
               {pv > 0 && (
                 <span className="sb-deposit-pct-badge">
-                  LVR {(100 - depositDisplay / pv * 100).toFixed(1)}%
+                  {(depositDisplay / pv * 100).toFixed(1)}% deposit · LVR {(100 - depositDisplay / pv * 100).toFixed(1)}%
                 </span>
               )}
             </div>
-            <div className="sb-cash-total">
-              {pv > 0 ? fmt(cashToComplete) : '$—'}
-            </div>
-            {pv > 0 && (
-              <div className="sb-cash-breakdown">
-                Deposit {fmt(depositDisplay)} ({(depositDisplay / pv * 100).toFixed(1)}%) + Costs {fmt(upfrontCosts)}
-              </div>
-            )}
-            <div className="sb-deposit-sub-label">Adjust deposit</div>
-            <div className="sb-deposit-sub-row">
+            <div className="sb-dollar-wrap">
               <span className="sb-dollar-sign">$</span>
               <DollarInput
-                className="sb-pv-input sb-pv-input-sm"
-                value={depositDisplay}
-                onChange={handleDepositChange}
-                placeholder="150,000"
+                className="sb-pv-input"
+                value={pv > 0 ? cashToComplete : 0}
+                onChange={v => handleDepositChange(Math.max(0, v - upfrontCosts))}
+                placeholder="120,000"
               />
             </div>
             <input
