@@ -107,6 +107,54 @@ function LoanRow({ label, displayValue, overrideActive, overrideInput, onToggle 
   );
 }
 
+// Editable stat card — click the value to override it inline
+function EditableStatCard({ label, displayValue, editValue, editable, onEdit, inputPrefix, inputSuffix, sub, valueClass }) {
+  const [editing, setEditing] = useState(false);
+  const [raw, setRaw] = useState('');
+  const ref = useRef();
+
+  const start = (e) => {
+    if (!editable) return;
+    e.stopPropagation();
+    setRaw(String(editValue ?? ''));
+    setEditing(true);
+    setTimeout(() => ref.current?.select(), 0);
+  };
+  const commit = () => {
+    const n = parseFloat(raw.replace(/[^0-9.]/g, ''));
+    if (!isNaN(n)) onEdit(n);
+    setEditing(false);
+  };
+
+  return (
+    <div className={`hero-stat-card ${editable ? 'hsc-editable' : ''}`} onClick={start}>
+      <div className="hsc-label">{label}</div>
+      {editing ? (
+        <div className="hsc-edit-row" onClick={e => e.stopPropagation()}>
+          {inputPrefix && <span className="hsc-edit-affix">{inputPrefix}</span>}
+          <input
+            ref={ref}
+            className="hsc-edit-input"
+            type="text"
+            inputMode="decimal"
+            value={raw}
+            onChange={e => setRaw(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+          />
+          {inputSuffix && <span className="hsc-edit-affix">{inputSuffix}</span>}
+        </div>
+      ) : (
+        <div className={`hsc-value ${valueClass || ''} ${editable ? 'hsc-value-editable' : ''}`}>
+          {displayValue}
+          {editable && <span className="hsc-edit-hint">✎</span>}
+        </div>
+      )}
+      {sub && <div className="hsc-sub">{sub}</div>}
+    </div>
+  );
+}
+
 // Cost row (simple label + value)
 function CostRow({ label, value, valueClass }) {
   return (
@@ -337,11 +385,23 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     setPropertyValue(v);
   };
 
-  const handleTotalLoanEdit = (v) => {
+  const handleLoanEdit = (v) => {
     setBaseLoanOverride(true);
     setBaseLoanManual(v);
     setTotalLoanOverride(false);
     setBaseLvrOverride(false);
+    setDepositOverride(false);
+    if (pv > 0) setDepositDisplay(Math.max(0, pv - v));
+  };
+
+  const handleLvrEdit = (v) => {
+    const clamped = Math.max(0, Math.min(100, v));
+    setBaseLvrManual(clamped);
+    setBaseLvrOverride(true);
+    setBaseLoanOverride(false);
+    setDepositOverride(false);
+    setTotalLoanOverride(false);
+    if (pv > 0) setDepositDisplay(Math.round(pv * (1 - clamped / 100)));
   };
 
   // Computed values for new UI
@@ -414,11 +474,31 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               options={PURPOSES} />
           </div>
 
-          {/* Deposit */}
+          {/* Cash to Complete summary + Deposit control */}
           <div className="sb-section">
+            {/* Total cash summary — the headline number */}
+            <div className="sb-cash-summary">
+              <div className="sb-cash-summary-label">Your Cash to Complete</div>
+              <div className="sb-cash-summary-amount">
+                {pv > 0 ? fmt(cashToComplete) : '—'}
+              </div>
+              {pv > 0 && (
+                <div className="sb-cash-summary-breakdown">
+                  <span>{fmt(depositDisplay)} deposit</span>
+                  <span className="sb-cash-plus"> + </span>
+                  <span>{fmt(upfrontCosts)} costs</span>
+                </div>
+              )}
+            </div>
+
+            {/* Deposit input — drives LVR */}
             <div className="sb-deposit-header">
-              <label className="sb-field-label">DEPOSIT</label>
-              <span className="sb-deposit-pct-badge">{pv > 0 ? depositPct + '% of price' : '20% of price'}</span>
+              <label className="sb-field-label">DEPOSIT AMOUNT</label>
+              {pv > 0 && (
+                <span className="sb-deposit-pct-badge">
+                  {(depositDisplay / pv * 100).toFixed(1)}% · LVR {(100 - depositDisplay / pv * 100).toFixed(1)}%
+                </span>
+              )}
             </div>
             <div className="sb-dollar-wrap">
               <span className="sb-dollar-sign">$</span>
@@ -611,14 +691,27 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               </div>
             </div>
             <div className="hero-stat-cards">
-              <div className="hero-stat-card">
-                <div className="hsc-label">HOME LOAN</div>
-                <div className="hsc-value">{fmt(totalLoan)}</div>
-              </div>
-              <div className="hero-stat-card">
-                <div className="hsc-label">LVR</div>
-                <div className={`hsc-value ${lmiActive ? 'hsc-lmi' : ''}`}>{fmtPct(totalLvr, 1)}</div>
-              </div>
+              {/* #2 Editable loan card; #4 disambiguated label when LMI capitalised */}
+              <EditableStatCard
+                label={lmiActive && capLMI ? 'TOTAL LOAN (INCL. LMI)' : 'HOME LOAN'}
+                displayValue={fmt(totalLoan)}
+                editValue={rawBaseLoan}
+                editable={pv > 0}
+                onEdit={handleLoanEdit}
+                inputPrefix="$"
+                sub={lmiActive && capLMI ? `Base ${fmt(rawBaseLoan)} + LMI ${fmt(lmi)}` : null}
+              />
+              {/* #2 Editable LVR card */}
+              <EditableStatCard
+                label="LVR"
+                displayValue={fmtPct(totalLvr, 1)}
+                editValue={Number(baseLvr.toFixed(1))}
+                editable={pv > 0}
+                onEdit={handleLvrEdit}
+                inputSuffix="%"
+                valueClass={lmiActive ? 'hsc-lmi' : ''}
+                sub={lmiActive ? '⚠ LMI applies' : (pv > 0 ? '✓ No LMI' : null)}
+              />
               <div className="hero-stat-card">
                 <div className="hsc-label">EST. REPAYMENT</div>
                 <div className="hsc-value">{fmt(repayment)}<span className="hsc-mo">/mo</span></div>

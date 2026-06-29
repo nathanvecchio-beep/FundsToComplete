@@ -309,6 +309,40 @@ body {
 }
 .sb-pv-input::placeholder { color: #c5c0b5; font-weight: 500; }
 
+/* Cash to complete summary box in sidebar */
+.sb-cash-summary {
+  background: var(--primary);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  color: white;
+}
+.sb-cash-summary-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 6px;
+}
+.sb-cash-summary-amount {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+.sb-cash-summary-breakdown {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.sb-cash-plus { color: rgba(255,255,255,0.25); }
+
 /* Deposit header row */
 .sb-deposit-header {
   display: flex;
@@ -317,13 +351,14 @@ body {
   margin-bottom: 6px;
 }
 .sb-deposit-pct-badge {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  background: var(--accent);
+  background: var(--primary);
   color: white;
   padding: 2px 9px;
   border-radius: 20px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 /* Deposit slider */
@@ -604,9 +639,58 @@ body {
   font-size: 1rem;
   font-weight: 800;
   color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 .hsc-value.hsc-lmi { color: var(--lmi-text); }
 .hsc-mo { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-left: 1px; }
+
+/* Editable stat card styles */
+.hsc-editable { cursor: pointer; }
+.hsc-editable:hover { border-color: var(--accent); background: #fffdf8; }
+.hsc-edit-hint {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-left: 2px;
+}
+.hsc-editable:hover .hsc-edit-hint { opacity: 0.7; }
+.hsc-value-editable { cursor: pointer; }
+.hsc-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+.hsc-edit-affix {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.hsc-edit-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  outline: none;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: transparent;
+  padding: 0 2px;
+  width: 100%;
+}
+.hsc-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.3;
+}
+.hsc-sub-lmi { color: var(--lmi-text); }
+.hsc-sub-ok  { color: var(--success); }
 
 /* ── MAIN WHITE CARD ── */
 .main-card {
