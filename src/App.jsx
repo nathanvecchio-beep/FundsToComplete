@@ -226,7 +226,6 @@ function SummaryView({ properties, summaries }) {
     { label: 'LMI (capitalised)',   key: d => d.lmiActive && d.capLMI ? fmt(d.lmi) : '—' },
     { label: 'Total Loan',          key: d => fmt(d.totalLoan), bold: true },
     { label: 'LVR',                 key: d => fmtPct(d.totalLvr), highlight: d => d.lmiActive },
-    { label: 'Est. Monthly Repayment', key: d => `${fmt(d.repayment)}/mo` },
   ];
 
   return (
@@ -302,10 +301,6 @@ function SummaryView({ properties, summaries }) {
                     <div className="spc-stat">
                       <div className="spc-stat-label">Stamp Duty</div>
                       <div className="spc-stat-value">{fmt(c.netStampDuty)}</div>
-                    </div>
-                    <div className="spc-stat">
-                      <div className="spc-stat-label">Est. Repayment</div>
-                      <div className="spc-stat-value">{fmt(c.repayment)}/mo</div>
                     </div>
                   </div>
                   {c.lmiActive

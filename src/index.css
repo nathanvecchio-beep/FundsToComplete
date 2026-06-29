@@ -676,7 +676,6 @@ body {
   gap: 5px;
 }
 .hsc-value.hsc-lmi { color: var(--lmi-text); }
-.hsc-mo { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-left: 1px; }
 
 /* Editable stat card styles */
 .hsc-editable { cursor: pointer; }
@@ -1105,19 +1104,6 @@ table.stbl tr.row-total td  { font-weight: 700; background: #e0e0f0; }
 .pp-row.lmi-row .pp-row-label { color: #c2410c; }
 .pp-row.lmi-row .pp-row-value { color: #c2410c; }
 
-.pp-repayment {
-  background: #1a1a1a;
-  color: white;
-  border-radius: 8px;
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-.pp-repayment-label { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.6); }
-.pp-repayment-value { font-size: 1.5rem; font-weight: 900; color: #F5A41F; }
-.pp-repayment-detail { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
 
 .pp-lmi-note {
   background: #fff7ed;

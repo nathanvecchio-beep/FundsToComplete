@@ -6,7 +6,6 @@ import {
   calculateTransferFee,
   calculateMortgageRegistration,
   calculateLMI,
-  calculateRepayment,
 } from '../utils/calculations';
 
 const STATES = ['New South Wales','Victoria','Queensland','South Australia','Western Australia','Australian Capital Territory','Northern Territory','Tasmania'];
@@ -14,8 +13,6 @@ const STATE_CODES = { 'New South Wales':'NSW','Victoria':'VIC','Queensland':'QLD
 const PROPERTY_TYPES = ['Established Home','New Home','Vacant Land','Off the Plan'];
 const PURPOSES = ['Owner Occupied','Investment'];
 const DEFAULT_FEES = 3000;
-const DEFAULT_RATE = 6.25;
-const DEFAULT_TERM = 30;
 
 function fmt(n) {
   if (n == null || n === '') return '$0';
@@ -216,10 +213,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     }
   }, [propertyValue]);
 
-  // ── Repayment ────────────────────────────────────────────────────────────
-  const [rate, setRate] = useState(initialValues?.rate ?? DEFAULT_RATE);
-  const [term, setTerm] = useState(initialValues?.term ?? DEFAULT_TERM);
-  const [ioTerm, setIoTerm] = useState(0);
 
   // ── LMI options ──────────────────────────────────────────────────────────
   const [capLMI, setCapLMI] = useState(true);
@@ -324,12 +317,10 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     const totalFundsRequired = pv + totalGovt + fees + ratesAdj + (capLMI ? 0 : lmi) - fhog;
     const fundsRequired = Math.max(0, totalFundsRequired);
 
-    const repayment = calculateRepayment(totalLoan, rate, term, ioTerm);
-
     return {
       pv, baseLvr, baseLvrCalc, rawBaseLoan, totalLoan, totalLvr,
       stampDuty, stampDutyConc, netStampDuty, transferFee, mortgageReg, totalGovt,
-      lmi, lmiResult, capitalisedLmi, fees, ratesAdj, fhog, fundsRequired, repayment,
+      lmi, lmiResult, capitalisedLmi, fees, ratesAdj, fhog, fundsRequired,
       lmiActive: lmi > 0 && !lmiWaived,
     };
   }, [
@@ -345,12 +336,11 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     includeRates, ratesAmount,
     includeFhog, fhogOverride, fhogManual, autoFhog,
     capLMI, overrideLMI, lmiManualAmt, lmiWaived,
-    rate, term, ioTerm,
   ]);
 
   const { pv, baseLvr, baseLvrCalc, rawBaseLoan, totalLoan, totalLvr,
     stampDuty, stampDutyConc, netStampDuty, transferFee, mortgageReg, totalGovt,
-    lmi, lmiResult, capitalisedLmi, fees, ratesAdj, fhog, fundsRequired, repayment, lmiActive } = C;
+    lmi, lmiResult, capitalisedLmi, fees, ratesAdj, fhog, fundsRequired, lmiActive } = C;
 
   const contribution = Math.max(0, fundsRequired - totalLoan);
 
@@ -359,9 +349,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
       label: label || `Property ${propIndex + 1}`,
       pv, totalLoan, rawBaseLoan, totalLvr, lmi, lmiActive, capLMI,
       netStampDuty, transferFee, mortgageReg, totalGovt,
-      fees, fundsRequired, contribution, repayment,
+      fees, fundsRequired, contribution,
       stateCode, purpose, propertyType,
-      rate, term, ioTerm,
       inputState: {
         pv,
         state,
@@ -369,15 +358,13 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
         purpose,
         firstHome,
         foreignBuyer,
-        rate,
-        term,
         baseLvrManual,
       },
     });
   }, [pv, totalLoan, rawBaseLoan, totalLvr, lmi, lmiActive, capLMI,
       netStampDuty, transferFee, mortgageReg, totalGovt,
-      fees, fundsRequired, contribution, repayment,
-      stateCode, purpose, propertyType, label, propIndex, rate, term, ioTerm,
+      fees, fundsRequired, contribution,
+      stateCode, purpose, propertyType, label, propIndex,
       state, firstHome, foreignBuyer, baseLvrManual]);
 
   const handlePvEdit = (v) => {
@@ -516,34 +503,11 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           {/* Advanced Options */}
           <div className="sb-section">
             <button className="sb-advanced-link" onClick={() => setAdvancedOpen(v => !v)}>
-              {advancedOpen ? '− Advanced options' : '+ Advanced options'} · rate, LMI, fees
+              {advancedOpen ? '− Advanced options' : '+ Advanced options'} · LMI, fees
             </button>
 
             {advancedOpen && (
               <div className="sb-advanced-body">
-                {/* Rate / term */}
-                <div className="sb-adv-row">
-                  <span className="sb-adv-label">Interest Rate</span>
-                  <div className="sb-adv-input-wrap">
-                    <input type="number" className="sb-adv-input" value={rate} onChange={e => setRate(Number(e.target.value))} step="0.05" min="0" />
-                    <span className="sb-adv-unit">%</span>
-                  </div>
-                </div>
-                <div className="sb-adv-row">
-                  <span className="sb-adv-label">Loan Term</span>
-                  <div className="sb-adv-input-wrap">
-                    <input type="number" className="sb-adv-input" value={term} onChange={e => setTerm(Number(e.target.value))} min="1" max="30" />
-                    <span className="sb-adv-unit">yrs</span>
-                  </div>
-                </div>
-                <div className="sb-adv-row">
-                  <span className="sb-adv-label">IO Years</span>
-                  <div className="sb-adv-input-wrap">
-                    <input type="number" className="sb-adv-input" value={ioTerm} onChange={e => setIoTerm(Number(e.target.value))} min="0" max="10" />
-                    <span className="sb-adv-unit">yrs</span>
-                  </div>
-                </div>
-
                 {/* LMI Waivers */}
                 <div className="sb-adv-section-label">LMI Waivers</div>
                 <SbToggle
@@ -696,10 +660,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                 valueClass={lmiActive ? 'hsc-lmi' : ''}
                 sub={lmiActive ? '⚠ LMI applies' : (pv > 0 ? '✓ No LMI' : null)}
               />
-              <div className="hero-stat-card">
-                <div className="hsc-label">EST. REPAYMENT</div>
-                <div className="hsc-value">{fmt(repayment)}<span className="hsc-mo">/mo</span></div>
-              </div>
             </div>
           </div>
 
@@ -905,15 +865,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               <span className="pp-row-value">{fmt(contribution)}</span>
             </div>
           </div>
-        </div>
-
-        {/* Repayment estimate */}
-        <div className="pp-repayment">
-          <div>
-            <div className="pp-repayment-label">Estimated Monthly Repayment</div>
-            <div className="pp-repayment-detail">{fmtPct(rate, 2)} p.a. &middot; {term} yr loan{ioTerm > 0 ? ` · ${ioTerm} yr IO` : ' · P&I'}</div>
-          </div>
-          <div className="pp-repayment-value">{fmt(repayment)}/mo</div>
         </div>
 
         {/* LMI note if applicable */}
