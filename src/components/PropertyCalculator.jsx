@@ -245,11 +245,20 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [ratesAmount, setRatesAmount] = useState(800);
 
   // ── Extra funds (sale proceeds, gifts, etc.) ─────────────────────────────
+  const FUND_TYPES = ['Sale Proceeds', 'Gift / Family', 'Inheritance', 'Shares / Investments', 'Other'];
+  const DEBT_TYPES = ['Credit Card', 'Personal Loan', 'Car Loan', 'HECS / HELP Debt', 'Other Debt'];
   const [extraFunds, setExtraFunds] = useState([]);
-  const addExtraFund = () => setExtraFunds(f => [...f, { id: Date.now(), label: 'Sale Proceeds', amount: 0 }]);
+  const addExtraFund = () => setExtraFunds(f => [...f, { id: Date.now(), type: 'Sale Proceeds', amount: 0 }]);
   const removeExtraFund = (id) => setExtraFunds(f => f.filter(x => x.id !== id));
   const updateExtraFund = (id, field, value) => setExtraFunds(f => f.map(x => x.id === id ? { ...x, [field]: value } : x));
   const extraFundsTotal = extraFunds.reduce((s, f) => s + (Number(f.amount) || 0), 0);
+
+  // ── Debts to close ────────────────────────────────────────────────────────
+  const [debts, setDebts] = useState([]);
+  const addDebt = () => setDebts(d => [...d, { id: Date.now(), type: 'Credit Card', amount: 0 }]);
+  const removeDebt = (id) => setDebts(d => d.filter(x => x.id !== id));
+  const updateDebt = (id, field, value) => setDebts(d => d.map(x => x.id === id ? { ...x, [field]: value } : x));
+  const debtsTotal = debts.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
   const stateCode = STATE_CODES[state] || 'NSW';
   const lmiWaived = fhgScheme || profLmi || famGuarantor;
@@ -408,7 +417,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
   // Funding summary position
   const totalAvailable = cashToComplete + extraFundsTotal;
-  const summaryPosition = totalAvailable - cashToComplete; // surplus (positive) or deficit (negative)
+  const totalRequired = cashToComplete + debtsTotal;
+  const summaryPosition = totalAvailable - totalRequired;
   const hasSurplus = summaryPosition >= 0;
 
   // Proportion bar
@@ -504,40 +514,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             <div className="sb-loan-needed">
               Loan needed: <strong>{pv > 0 ? fmt(loanNeeded) : '—'}</strong>
             </div>
-          </div>
-
-          {/* Funds Available */}
-          <div className="sb-section">
-            <label className="sb-field-label">FUNDS AVAILABLE</label>
-            <div className="sb-fund-row">
-              <span className="sb-fund-tag">Savings / Deposit</span>
-              <span className="sb-fund-val">{pv > 0 ? fmt(cashToComplete) : '—'}</span>
-            </div>
-            {extraFunds.map(f => (
-              <div key={f.id} className="sb-fund-row">
-                <span className="sb-fund-tag sb-fund-tag-extra">{f.label || 'Other Fund'}</span>
-                <span className="sb-fund-val">{fmt(f.amount)}</span>
-              </div>
-            ))}
-            {extraFunds.length === 0 && (
-              <div className="sb-fund-row sb-fund-row-dim">
-                <span className="sb-fund-tag">Sale Proceeds</span>
-                <span className="sb-fund-val">—</span>
-              </div>
-            )}
-            <div className="sb-fund-total-row">
-              <span className="sb-fund-total-label">Total Available</span>
-              <span className="sb-fund-total-val">{pv > 0 ? fmt(totalAvailable) : '—'}</span>
-            </div>
-            {pv > 0 && extraFundsTotal > 0 && (
-              <div className={`sb-position-pill ${hasSurplus ? 'sb-position-surplus' : 'sb-position-deficit'}`}>
-                <div>
-                  <div>{hasSurplus ? '✓ Surplus' : '⚠ Shortfall'}</div>
-                  <div className="sb-position-sub">{hasSurplus ? 'Funds cover all costs' : 'Additional funds needed'}</div>
-                </div>
-                <span className="sb-position-amount">{fmt(Math.abs(summaryPosition))}</span>
-              </div>
-            )}
           </div>
 
           {/* Buyer Profile */}
@@ -718,48 +694,79 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           {/* FUNDING SUMMARY TABLE */}
           {pv > 0 && (
             <div className="funding-summary-card">
-              <div className="fsc-header-row">
-                <div className="fsc-title">FUNDING SUMMARY</div>
-                <button className="fsc-add-btn" onClick={addExtraFund}>+ Add Fund</button>
-              </div>
               <div className="fsc-table">
+                {/* LEFT — Funds Available */}
                 <div className="fsc-col">
-                  <div className="fsc-col-head">Funds Available</div>
+                  <div className="fsc-col-head-row">
+                    <div className="fsc-col-head">Funds Available</div>
+                    <button className="fsc-add-btn" onClick={addExtraFund}>+ Fund</button>
+                  </div>
                   <div className="fsc-row"><span>Savings / Deposit</span><span>{fmt(cashToComplete)}</span></div>
                   {extraFunds.map(f => (
-                    <div key={f.id} className="fsc-row fsc-row-extra">
-                      <span>{f.label || 'Other'}</span>
-                      <span className="fsc-extra-right">
-                        {fmt(f.amount)}
+                    <div key={f.id} className="fsc-input-row">
+                      <select className="fsc-type-select" value={f.type} onChange={e => updateExtraFund(f.id, 'type', e.target.value)}>
+                        {FUND_TYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <div className="fsc-input-right">
+                        <span className="fsc-input-dollar">$</span>
+                        <DollarInput className="fsc-amount-input" value={f.amount} onChange={v => updateExtraFund(f.id, 'amount', v)} placeholder="0" />
                         <button className="fsc-del-btn" onClick={() => removeExtraFund(f.id)}>✕</button>
-                      </span>
+                      </div>
                     </div>
                   ))}
-                  <div className="fsc-row fsc-row-empty"><span>Sale Proceeds</span><span>—</span></div>
-                  <div className="fsc-row fsc-row-empty"><span>Gift / Other</span><span>—</span></div>
+                  {extraFunds.length === 0 && <>
+                    <div className="fsc-row fsc-row-empty"><span>Sale Proceeds</span><span>—</span></div>
+                    <div className="fsc-row fsc-row-empty"><span>Gift / Other</span><span>—</span></div>
+                  </>}
                   <div className="fsc-total"><span>Total Available</span><span>{fmt(totalAvailable)}</span></div>
                 </div>
+
+                {/* RIGHT — Funds Required + Debts */}
                 <div className="fsc-col fsc-col-right">
-                  <div className="fsc-col-head">Funds Required</div>
+                  <div className="fsc-col-head-row">
+                    <div className="fsc-col-head">Funds Required</div>
+                  </div>
                   <div className="fsc-row"><span>Deposit ({(depositDisplay / pv * 100).toFixed(0)}%)</span><span>{fmt(depositDisplay)}</span></div>
                   <div className="fsc-row"><span>Stamp Duty</span><span>{fmt(netStampDuty)}</span></div>
                   <div className="fsc-row"><span>Transfer &amp; Reg Fees</span><span>{fmt(transferFee + mortgageReg)}</span></div>
                   <div className="fsc-row"><span>Legal &amp; Bank Fees</span><span>{fmt(fees)}</span></div>
                   {lmiActive && !capLMI && <div className="fsc-row fsc-row-lmi"><span>LMI (upfront)</span><span>{fmt(lmi)}</span></div>}
                   {fhog > 0 && <div className="fsc-row fsc-row-credit"><span>FHOG Grant</span><span>−{fmt(fhog)}</span></div>}
-                  <div className="fsc-total"><span>Total Required</span><span>{fmt(cashToComplete)}</span></div>
+
+                  {/* Debts to Close */}
+                  <div className="fsc-debts-header">
+                    <span className="fsc-debts-label">Debts to Close</span>
+                    <button className="fsc-add-btn fsc-add-debt-btn" onClick={addDebt}>+ Debt</button>
+                  </div>
+                  {debts.map(d => (
+                    <div key={d.id} className="fsc-input-row">
+                      <select className="fsc-type-select" value={d.type} onChange={e => updateDebt(d.id, 'type', e.target.value)}>
+                        {DEBT_TYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <div className="fsc-input-right">
+                        <span className="fsc-input-dollar">$</span>
+                        <DollarInput className="fsc-amount-input" value={d.amount} onChange={v => updateDebt(d.id, 'amount', v)} placeholder="0" />
+                        <button className="fsc-del-btn" onClick={() => removeDebt(d.id)}>✕</button>
+                      </div>
+                    </div>
+                  ))}
+                  {debts.length === 0 && <div className="fsc-row fsc-row-empty"><span>No debts to close</span><span>—</span></div>}
+
+                  <div className="fsc-total"><span>Total Required</span><span>{fmt(totalRequired)}</span></div>
                 </div>
               </div>
+
+              {/* Summary Position */}
               <div className={`fsc-position ${hasSurplus ? 'fsc-surplus' : 'fsc-deficit'}`}>
                 <div>
                   <div className="fsc-position-label">{hasSurplus ? '✓ Summary Position — Surplus' : '⚠ Summary Position — Shortfall'}</div>
                   <div className="fsc-position-sub">
                     {hasSurplus
-                      ? extraFundsTotal > 0 ? "Client's funds fully cover all costs to complete" : 'Savings cover all upfront costs and deposit'
+                      ? (extraFundsTotal > 0 || debtsTotal > 0) ? "Client's funds cover all costs and debts to close" : 'Savings cover all upfront costs and deposit'
                       : `Client is short by ${fmt(Math.abs(summaryPosition))} — consider additional funds or a higher LVR`}
                   </div>
                 </div>
-                <div className="fsc-position-amount">{extraFundsTotal > 0 ? fmt(Math.abs(summaryPosition)) : '—'}</div>
+                <div className="fsc-position-amount">{(extraFundsTotal > 0 || debtsTotal > 0) ? fmt(Math.abs(summaryPosition)) : '—'}</div>
               </div>
             </div>
           )}

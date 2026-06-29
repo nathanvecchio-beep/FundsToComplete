@@ -533,18 +533,76 @@ body {
   padding: 16px 18px;
   margin-bottom: 12px;
 }
-.fsc-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
 .fsc-title {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+  padding: 0 0 12px;
+}
+.fsc-col-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid rgba(0,0,0,0.08);
+  margin-bottom: 6px;
+}
+.fsc-debts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0 4px;
+  padding-top: 8px;
+  border-top: 1.5px dashed rgba(0,0,0,0.1);
+}
+.fsc-debts-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fsc-add-debt-btn { border-color: #dc2626 !important; color: #dc2626 !important; }
+.fsc-add-debt-btn:hover { background: #dc2626 !important; color: white !important; }
+.fsc-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px dashed rgba(0,0,0,0.06);
+}
+.fsc-type-select {
+  flex: 1;
+  font-size: 0.7rem;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 5px;
+  padding: 4px 6px;
+  background: white;
+  color: var(--primary);
+  outline: none;
+  min-width: 0;
+  cursor: pointer;
+}
+.fsc-input-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 5px;
+  padding: 3px 6px;
+}
+.fsc-input-dollar { font-size: 0.68rem; color: var(--text-muted); }
+.fsc-amount-input {
+  width: 80px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  border: none;
+  background: transparent;
+  outline: none;
+  text-align: right;
 }
 .fsc-add-btn {
   font-size: 0.62rem;
@@ -591,9 +649,6 @@ body {
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-muted);
-  padding-bottom: 8px;
-  border-bottom: 1.5px solid rgba(0,0,0,0.08);
-  margin-bottom: 6px;
 }
 .fsc-row {
   display: flex;
