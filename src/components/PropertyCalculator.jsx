@@ -27,7 +27,7 @@ function fmtPct(n, dec = 2) {
 }
 
 // Dollar input that displays with comma formatting while editing
-function DollarInput({ value, onChange, className }) {
+function DollarInput({ value, onChange, className, placeholder }) {
   const [focused, setFocused] = useState(false);
   const [raw, setRaw] = useState('');
   const onFocus = () => { setRaw(value > 0 ? String(value) : ''); setFocused(true); };
@@ -38,6 +38,7 @@ function DollarInput({ value, onChange, className }) {
       className={className}
       type="text"
       inputMode="numeric"
+      placeholder={placeholder}
       value={display}
       onFocus={onFocus}
       onChange={e => setRaw(e.target.value)}
@@ -60,7 +61,7 @@ function SbToggle({ label, sub, checked, onChange, disabled, info }) {
   );
 }
 
-// Hero cell (editable)
+// Hero cell (editable) — kept for internal use / print page
 function HeroCell({ label, value, editable, onEdit, sub }) {
   const [editing, setEditing] = useState(false);
   const [raw, setRaw] = useState('');
@@ -125,8 +126,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [foreignBuyer, setForeignBuyer] = useState(initialValues?.foreignBuyer || false);
 
   // ── LMI waivers ─────────────────────────────────────────────────────────
-  const [lmiOpen, setLmiOpen] = useState(false);
-  const [costsOpen, setCostsOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [fhgScheme, setFhgScheme] = useState(false);
   const [profLmi, setProfLmi] = useState(false);
   const [famGuarantor, setFamGuarantor] = useState(false);
@@ -143,8 +143,21 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [totalLoanOverride, setTotalLoanOverride] = useState(false);
   const [totalLoanManual, setTotalLoanManual] = useState(0);
 
-  const [depositOverride, setDepositOverride] = useState(false);
+  // Always use depositOverride = true in new UI
+  const depositOverride = true;
   const [depositManual, setDepositManual] = useState(0);
+
+  // Auto-set deposit to 20% when property value is first set
+  const pvInitialized = useRef(false);
+  useEffect(() => {
+    const pv = Number(propertyValue) || 0;
+    if (pv > 0 && !pvInitialized.current) {
+      pvInitialized.current = true;
+      if (depositManual === 0) {
+        setDepositManual(Math.round(pv * 0.2));
+      }
+    }
+  }, [propertyValue]);
 
   // ── Repayment ────────────────────────────────────────────────────────────
   const [rate, setRate] = useState(initialValues?.rate ?? DEFAULT_RATE);
@@ -311,6 +324,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
       state, firstHome, foreignBuyer, baseLvrManual]);
 
   const handlePvEdit = (v) => {
+    pvInitialized.current = false;
     setPropertyValue(v);
   };
 
@@ -318,10 +332,19 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     setBaseLoanOverride(true);
     setBaseLoanManual(v);
     setTotalLoanOverride(false);
-    setDepositOverride(false);
-    setDepositManual(0);
     setBaseLvrOverride(false);
   };
+
+  // Computed values for new UI
+  const depositPct = pv > 0 ? Math.round(depositManual / pv * 100) : 20;
+  const loanNeeded = Math.max(0, pv - depositManual);
+  const upfrontCosts = Math.max(0, fundsRequired - pv);
+  const cashToComplete = contribution;
+
+  // Proportion bar
+  const totalBar = depositManual + upfrontCosts;
+  const depositBarPct = totalBar > 0 ? (depositManual / totalBar * 100) : 70;
+  const costsBarPct = totalBar > 0 ? (upfrontCosts / totalBar * 100) : 30;
 
   return (
     <>
@@ -330,7 +353,22 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
         {/* LEFT SIDEBAR */}
         <div className="sidebar">
           <div className="sb-section">
-            <div className="sb-section-label">Property</div>
+            <div className="sb-section-label">Your Purchase</div>
+
+            {/* Property Value */}
+            <div className="sb-pv-field">
+              <label className="sb-field-label">PROPERTY VALUE</label>
+              <div className="sb-dollar-wrap">
+                <span className="sb-dollar-sign">$</span>
+                <DollarInput
+                  className="sb-pv-input"
+                  value={propertyValue}
+                  onChange={handlePvEdit}
+                  placeholder="750,000"
+                />
+              </div>
+            </div>
+
             <SelectField label="State" value={state} onChange={setState}
               options={STATES.map(s => ({ value: s, label: s }))} />
             <SelectField label="Property Type" value={propertyType} onChange={setPropertyType}
@@ -339,25 +377,92 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               options={PURPOSES} />
           </div>
 
+          {/* Deposit */}
           <div className="sb-section">
-            <div className="sb-section-label">Buyer Profile</div>
-            <SbToggle label="First Home Buyer" checked={firstHome} onChange={setFirstHome} />
-            <SbToggle label="Foreign Buyer" checked={foreignBuyer} onChange={setForeignBuyer} />
+            <div className="sb-deposit-header">
+              <label className="sb-field-label">DEPOSIT</label>
+              <span className="sb-deposit-pct-badge">{pv > 0 ? depositPct + '% of price' : '20% of price'}</span>
+            </div>
+            <div className="sb-dollar-wrap">
+              <span className="sb-dollar-sign">$</span>
+              <DollarInput
+                className="sb-pv-input"
+                value={depositManual}
+                onChange={v => {
+                  setDepositManual(v);
+                  setBaseLoanOverride(false);
+                  setBaseLvrOverride(false);
+                  setTotalLoanOverride(false);
+                }}
+                placeholder="150,000"
+              />
+            </div>
+            <input
+              type="range"
+              className="sb-deposit-slider"
+              min={0}
+              max={pv || 1000000}
+              step={1000}
+              value={depositManual}
+              onChange={e => {
+                const v = Number(e.target.value);
+                setDepositManual(v);
+                setBaseLoanOverride(false);
+                setBaseLvrOverride(false);
+                setTotalLoanOverride(false);
+              }}
+            />
+            <div className="sb-loan-needed">
+              Loan needed: <strong>{pv > 0 ? fmt(loanNeeded) : '—'}</strong>
+            </div>
           </div>
 
+          {/* Buyer Profile */}
           <div className="sb-section">
-            <div className="sb-section-label sb-collapsible" onClick={() => setLmiOpen(v => !v)}>
-              LMI Waivers <span className={`sb-chevron ${lmiOpen ? 'open' : ''}`}>▾</span>
-            </div>
-            {lmiOpen && (
-              <>
+            <SbToggle label="First home buyer" checked={firstHome} onChange={setFirstHome} />
+            <SbToggle label="Foreign buyer" checked={foreignBuyer} onChange={setForeignBuyer} />
+          </div>
+
+          {/* Advanced Options */}
+          <div className="sb-section">
+            <button className="sb-advanced-link" onClick={() => setAdvancedOpen(v => !v)}>
+              {advancedOpen ? '− Advanced options' : '+ Advanced options'} · rate, LMI, fees
+            </button>
+
+            {advancedOpen && (
+              <div className="sb-advanced-body">
+                {/* Rate / term */}
+                <div className="sb-adv-row">
+                  <span className="sb-adv-label">Interest Rate</span>
+                  <div className="sb-adv-input-wrap">
+                    <input type="number" className="sb-adv-input" value={rate} onChange={e => setRate(Number(e.target.value))} step="0.05" min="0" />
+                    <span className="sb-adv-unit">%</span>
+                  </div>
+                </div>
+                <div className="sb-adv-row">
+                  <span className="sb-adv-label">Loan Term</span>
+                  <div className="sb-adv-input-wrap">
+                    <input type="number" className="sb-adv-input" value={term} onChange={e => setTerm(Number(e.target.value))} min="1" max="30" />
+                    <span className="sb-adv-unit">yrs</span>
+                  </div>
+                </div>
+                <div className="sb-adv-row">
+                  <span className="sb-adv-label">IO Years</span>
+                  <div className="sb-adv-input-wrap">
+                    <input type="number" className="sb-adv-input" value={ioTerm} onChange={e => setIoTerm(Number(e.target.value))} min="0" max="10" />
+                    <span className="sb-adv-unit">yrs</span>
+                  </div>
+                </div>
+
+                {/* LMI Waivers */}
+                <div className="sb-adv-section-label">LMI Waivers</div>
                 <SbToggle
                   label="First Home Guarantee"
                   sub="5% deposit, no LMI"
                   checked={fhgScheme}
                   onChange={setFhgScheme}
                   disabled={!firstHome}
-                  info="Government scheme — FHBs can buy with 5% deposit and no LMI. Income and price caps apply."
+                  info="Government scheme — FHBs can buy with 5% deposit and no LMI."
                 />
                 <SbToggle
                   label="Professional Waiver"
@@ -373,16 +478,9 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   onChange={setFamGuarantor}
                   info="A family member uses equity in their property as additional security."
                 />
-              </>
-            )}
-          </div>
 
-          <div className="sb-section">
-            <div className="sb-section-label sb-collapsible" onClick={() => setCostsOpen(v => !v)}>
-              Costs &amp; Fees <span className={`sb-chevron ${costsOpen ? 'open' : ''}`}>▾</span>
-            </div>
-            {costsOpen && (
-              <>
+                {/* Costs & Fees */}
+                <div className="sb-adv-section-label">Costs &amp; Fees</div>
                 <SbToggle
                   label="Include Govt Charges"
                   sub="Stamp duty, transfer &amp; reg"
@@ -409,7 +507,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   sub="Council/water at settlement"
                   checked={includeRates}
                   onChange={setIncludeRates}
-                  info="Buyers typically reimburse seller for prepaid council/water rates. Usually $500–$1,500."
+                  info="Buyers typically reimburse seller for prepaid council/water rates."
                 />
                 {includeRates && (
                   <div className="sb-sub-input">
@@ -449,7 +547,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                     <input type="number" value={lmiManualAmt} onChange={e => setLmiManualAmt(Number(e.target.value))} />
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -457,298 +555,120 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
         {/* RIGHT CONTENT */}
         <div className="calc-right">
 
-          {/* HERO BAR */}
-          <div className="hero-bar">
-            <HeroCell
-              label="Property Value"
-              value={pv}
-              editable
-              onEdit={handlePvEdit}
-              sub={pv > 0 ? `Base LVR ${fmtPct(baseLvrCalc, 1)}` : 'Click to enter'}
-            />
-            <div className="hero-div" />
-            <HeroCell
-              label="Total Loan"
-              value={totalLoan}
-              editable
-              onEdit={handleTotalLoanEdit}
-              sub={lmiActive ? `incl. LMI ${fmt(lmi)}` : rawBaseLoan > 0 ? 'No LMI' : '—'}
-            />
-            <div className="hero-div" />
-            <div className="hero-item">
-              <div className="hero-label">LVR</div>
-              <div className={`hero-value ${lmiActive ? 'hero-val-lmi' : ''}`}>{fmtPct(totalLvr, 1)}</div>
-              <div className={`hero-sub ${lmiActive ? 'hero-sub-lmi' : ''}`}>
-                {lmiActive ? '⚠ LMI applies' : totalLvr > 0 ? '✓ No LMI' : '—'}
+          {/* HERO SECTION */}
+          <div className="hero-section">
+            <div className="hero-main">
+              <div className="hero-gold-label">CASH YOU NEED TO COMPLETE</div>
+              <div className="hero-big-number">
+                {pv > 0 ? fmt(contribution) : '$—'}
+              </div>
+              <div className="hero-subtitle">
+                {pv > 0
+                  ? `Your ${depositPct}% deposit plus all upfront costs to settle a ${fmt(pv)} home in ${state}.`
+                  : 'Enter a property value to see your funds to complete.'
+                }
               </div>
             </div>
-            <div className="hero-cash">
-              <div className="hero-label">Cash Required</div>
-              <div className="hero-cash-value">{fundsRequired > 0 ? fmt(contribution) : 'N/A'}</div>
-              <div className="hero-sub hero-sub-cash">
-                {fundsRequired > 0 ? `Total funds: ${fmt(fundsRequired)}` : 'Enter property value'}
+            <div className="hero-stat-cards">
+              <div className="hero-stat-card">
+                <div className="hsc-label">HOME LOAN</div>
+                <div className="hsc-value">{fmt(totalLoan)}</div>
+              </div>
+              <div className="hero-stat-card">
+                <div className="hsc-label">LVR</div>
+                <div className={`hsc-value ${lmiActive ? 'hsc-lmi' : ''}`}>{fmtPct(totalLvr, 1)}</div>
+              </div>
+              <div className="hero-stat-card">
+                <div className="hsc-label">EST. REPAYMENT</div>
+                <div className="hsc-value">{fmt(repayment)}<span className="hsc-mo">/mo</span></div>
               </div>
             </div>
           </div>
 
-          {/* CARDS GRID */}
-          <div className="cards-grid">
-
-            {/* LOAN STRUCTURE CARD */}
-            <div className="panel-card">
-              <div className="panel-card-header">
-                <span className="panel-card-title">Loan Structure</span>
-                <span className="panel-card-hint">Toggle to override</span>
+          {/* MAIN WHITE CARD */}
+          <div className="main-card">
+            {/* WHERE YOUR CASH GOES */}
+            <div className="main-card-section">
+              <div className="mcs-label">WHERE YOUR CASH GOES</div>
+              {/* Proportional bar */}
+              <div className="funds-bar">
+                <div className="funds-bar-deposit" style={{ width: `${depositBarPct}%` }} />
+                <div className="funds-bar-costs" style={{ width: `${costsBarPct}%` }} />
               </div>
-              <div className="panel-card-body">
-
-                <LoanRow
-                  label="Deposit Required"
-                  displayValue={fmt(depositOverride ? depositManual : contribution)}
-                  overrideActive={depositOverride}
-                  overrideInput={depositOverride ? (
-                    <DollarInput className="loan-override-input" value={depositManual}
-                      onChange={v => {
-                        setDepositManual(v);
-                        setDepositOverride(true);
-                        setBaseLoanOverride(false); setBaseLvrOverride(false); setTotalLoanOverride(false);
-                      }} />
-                  ) : null}
-                  onToggle={v => {
-                    setDepositOverride(v);
-                    if (!v) setDepositManual(0);
-                    if (v) { setBaseLoanOverride(false); setBaseLvrOverride(false); }
-                  }}
-                />
-
-                <LoanRow
-                  label="Base LVR"
-                  displayValue={fmtPct(baseLvrCalc, 2)}
-                  overrideActive={baseLvrOverride}
-                  overrideInput={baseLvrOverride ? (
-                    <input className="loan-override-input" type="number" step="0.1" value={baseLvrManual}
-                      onChange={e => setBaseLvrManual(Number(e.target.value))} />
-                  ) : null}
-                  onToggle={v => {
-                    setBaseLvrOverride(v);
-                    if (!v) setBaseLoanOverride(false);
-                    if (v) { setDepositOverride(false); setDepositManual(0); setBaseLoanOverride(false); }
-                  }}
-                />
-
-                <LoanRow
-                  label="Base Loan Amount"
-                  displayValue={fmt(rawBaseLoan)}
-                  overrideActive={baseLoanOverride}
-                  overrideInput={baseLoanOverride ? (
-                    <DollarInput className="loan-override-input" value={baseLoanManual}
-                      onChange={v => {
-                        setBaseLoanManual(v); setBaseLoanOverride(true);
-                        setDepositOverride(false); setDepositManual(0);
-                      }} />
-                  ) : null}
-                  onToggle={v => {
-                    setBaseLoanOverride(v);
-                    if (!v) setTotalLoanOverride(false);
-                    if (v) { setDepositOverride(false); setDepositManual(0); setBaseLvrOverride(false); }
-                  }}
-                />
-
-                {lmiWaived && <div className="lmi-waived-strip">✓ LMI Waived — no LMI applies</div>}
-                {lmiActive && (
-                  <div className="lmi-strip">
-                    <div className="lmi-strip-body">
-                      <span className="lmi-strip-icon">⚠</span>
-                      <div>
-                        <div className="lmi-strip-title">LMI — {fmt(lmi)}</div>
-                        <div className="lmi-strip-sub">
-                          LVR {fmtPct(totalLvr, 1)} &gt; 80% · Rate {(lmiResult.rate * 100).toFixed(3)}% · {capLMI ? 'Capitalised into loan' : 'Paid upfront'}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="lmi-strip-action">
-                      <span>Capitalise</span>
-                      <Toggle checked={capLMI} onChange={setCapLMI} />
-                    </div>
-                  </div>
-                )}
-
-                {lmiActive && (
-                  <div className="loan-row loan-row-sub">
-                    <span className="loan-row-label">Total LVR (incl. LMI)</span>
-                    <span className="loan-row-value" style={{ color: 'var(--lmi-text)' }}>{fmtPct(totalLvr, 2)}</span>
-                  </div>
-                )}
-
-                <div className="loan-row loan-row-total">
-                  <span>Total Loan Amount</span>
-                  <span>{fmt(totalLoan)}</span>
+              <div className="funds-legend">
+                <div className="funds-legend-item">
+                  <span className="fli-dot fli-dot-dark" />
+                  <span>Deposit {fmt(depositManual)} &middot; {depositBarPct.toFixed(0)}%</span>
                 </div>
-
-              </div>
-
-              {/* Repayment footer */}
-              <div className="repay-footer">
-                <div className="repay-field">
-                  <label>Rate %</label>
-                  <input type="number" value={rate} onChange={e => setRate(Number(e.target.value))} step="0.05" min="0" />
-                </div>
-                <div className="repay-sep">·</div>
-                <div className="repay-field">
-                  <label>Term</label>
-                  <input type="number" value={term} onChange={e => setTerm(Number(e.target.value))} min="1" max="30" />
-                </div>
-                <div className="repay-sep">·</div>
-                <div className="repay-field">
-                  <label>IO yrs</label>
-                  <input type="number" value={ioTerm} onChange={e => setIoTerm(Number(e.target.value))} min="0" max="10" />
-                </div>
-                <div className="repay-result">
-                  <span className="repay-label">Monthly P&amp;I</span>
-                  <span className="repay-value">{fmt(repayment)}<span className="repay-mo">/mo</span></span>
+                <div className="funds-legend-item">
+                  <span className="fli-dot fli-dot-gold" />
+                  <span>Costs {fmt(upfrontCosts)} &middot; {costsBarPct.toFixed(0)}%</span>
                 </div>
               </div>
             </div>
 
-            {/* COST BREAKDOWN CARD */}
-            <div className="panel-card">
-              <div className="panel-card-header">
-                <span className="panel-card-title">Cost Breakdown</span>
-                <button className="panel-card-action-btn" onClick={() => setShowBreakdown(v => !v)}>
-                  {showBreakdown ? '← Simple' : 'Advanced →'}
-                </button>
-              </div>
+            <div className="main-card-divider" />
 
-              {!showBreakdown ? (
-                <div className="panel-card-body cost-body">
-                  <CostRow label="Purchase Price" value={fmt(pv)} />
-
-                  <div className="cost-row cost-row-stamp">
-                    <span className="cost-label">
-                      Stamp Duty
-                      {firstHome && govtChargesOn && <span className="cost-badge cost-badge-fhb">FHB rate</span>}
-                      {!govtChargesOn && <span className="cost-badge cost-badge-off">excluded</span>}
-                      {stampDutyOverride && govtChargesOn && <span className="cost-badge cost-badge-override">OVERRIDE</span>}
+            {/* UPFRONT COSTS BREAKDOWN */}
+            <div className="main-card-section">
+              <div className="mcs-label">UPFRONT COSTS BREAKDOWN</div>
+              <div className="costs-grid">
+                <div className="costs-col">
+                  <div className="costs-item">
+                    <span className="ci-label">Government stamp duty</span>
+                    <span className="ci-value">{govtChargesOn ? fmt(netStampDuty) : '—'}</span>
+                  </div>
+                  <div className="costs-item">
+                    <span className="ci-label">Transfer &amp; registration</span>
+                    <span className="ci-value">{govtChargesOn ? fmt(transferFee + mortgageReg) : '—'}</span>
+                  </div>
+                  <div className="costs-item">
+                    <span className="ci-label">Legal &amp; bank fees</span>
+                    <span className="ci-value">{fmt(fees)}</span>
+                  </div>
+                  <div className="costs-item">
+                    <span className="ci-label">Lenders mortgage insurance</span>
+                    <span className={`ci-value ${lmiActive ? '' : 'ci-value-green'}`}>
+                      {lmiActive ? fmt(lmi) : 'Not payable'}
                     </span>
-                    <div className="cost-row-right">
-                      {govtChargesOn ? (
-                        stampDutyOverride ? (
-                          <>
-                            <input className="cost-inline-input" type="number" value={stampDutyManual}
-                              onChange={e => setStampDutyManual(Number(e.target.value))} />
-                            <button className="cost-reset-btn" onClick={() => { setStampDutyOverride(false); setStampDutyManual(0); }}>↩ auto</button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="cost-value">{fmt(netStampDuty)}</span>
-                            <button className="cost-adjust-btn" onClick={() => { setStampDutyOverride(true); setStampDutyManual(netStampDuty); }}>adjust</button>
-                          </>
-                        )
-                      ) : <span className="cost-value cost-excluded">—</span>}
-                    </div>
                   </div>
-
-                  {stampDutyConc > 0 && govtChargesOn && (
-                    <CostRow label="Stamp Duty Concession" value={`−${fmt(stampDutyConc)}`} valueClass="cost-val-success" />
+                </div>
+                <div className="costs-col">
+                  {ratesAdj > 0 && (
+                    <div className="costs-item">
+                      <span className="ci-label">Council &amp; water (rates)</span>
+                      <span className="ci-value">{fmt(ratesAdj)}</span>
+                    </div>
                   )}
-                  <CostRow label="Transfer &amp; Registration" value={govtChargesOn ? fmt(transferFee + mortgageReg) : '—'} />
-                  <CostRow label="Legal &amp; Bank Fees" value={fmt(fees)} />
-                  {ratesAdj > 0 && <CostRow label="Rates Adjustment" value={fmt(ratesAdj)} />}
-                  {!capLMI && lmi > 0 && <CostRow label="LMI (upfront payment)" value={fmt(lmi)} valueClass="cost-val-lmi" />}
-                  {fhog > 0 && <CostRow label={`FHOG Grant (${stateCode})`} value={`−${fmt(fhog)}`} valueClass="cost-val-success" />}
-
-                  <div className="cost-subtotal">
-                    <span>Total Funds Required</span>
-                    <span>{fmt(fundsRequired)}</span>
-                  </div>
-
-                  <div className="cost-loan-line">
-                    <span>Less: Total Loan</span>
-                    <span>−{fmt(totalLoan)}</span>
-                  </div>
-
-                  <div className="cost-total">
-                    <span>Cash Required</span>
-                    <span>{fmt(contribution)}</span>
-                  </div>
+                  {fhog > 0 && (
+                    <div className="costs-item">
+                      <span className="ci-label">First Home Owner Grant</span>
+                      <span className="ci-value ci-value-green">&minus;{fmt(fhog)}</span>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="panel-card-body adv-body">
-                  <div className="adv-section">
-                    <div className="adv-section-title">
-                      Government Charges
-                      <div className="adv-section-toggle">
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginRight: 4 }}>Include</span>
-                        <Toggle checked={govtChargesOn} onChange={setGovtChargesOn} />
-                      </div>
-                    </div>
-                    <div className="adv-row">
-                      <span>Stamp Duty {firstHome ? '(FHB rate)' : ''}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {stampDutyOverride
-                          ? <><input className="adv-input" type="number" value={stampDutyManual} onChange={e => { setStampDutyOverride(true); setStampDutyManual(Number(e.target.value)); }} /><button className="cost-reset-btn" onClick={() => { setStampDutyOverride(false); setStampDutyManual(0); }}>↩ auto</button></>
-                          : <><span>{fmt(stampDuty)}</span><button className="cost-adjust-btn" onClick={() => { setStampDutyOverride(true); setStampDutyManual(stampDuty); }}>adjust</button></>}
-                      </div>
-                    </div>
-                    <div className="adv-row">
-                      <span>Stamp Duty Concession</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {stampDutyConcOverride
-                          ? <input className="adv-input" type="number" value={stampDutyConcManual} onChange={e => { setStampDutyConcOverride(true); setStampDutyConcManual(Number(e.target.value)); }} />
-                          : <><span>{fmt(stampDutyConc)}</span><button className="cost-adjust-btn" onClick={() => { setStampDutyConcOverride(true); setStampDutyConcManual(0); }}>+</button></>}
-                      </div>
-                    </div>
-                    <div className="adv-row"><span>Net Stamp Duty</span><span style={{ fontWeight: 700 }}>{fmt(netStampDuty)}</span></div>
-                    <div className="adv-row"><span>Title Transfer Fee</span><span>${transferFee.toFixed(2)}</span></div>
-                    <div className="adv-row"><span>Mortgage Registration</span><span>${mortgageReg.toFixed(2)}</span></div>
-                    <div className="adv-row adv-subtotal"><span>Total Govt Charges</span><span>{fmt(totalGovt)}</span></div>
-                  </div>
-
-                  <div className="adv-section">
-                    <div className="adv-section-title">Fees &amp; Other Costs</div>
-                    {!useDetailedFees
-                      ? <div className="adv-row"><span>Legal &amp; Bank Fees (estimate)</span><span>{fmt(fees)}</span></div>
-                      : <>
-                          {[['Conveyancer', conveyancerFee, setConveyancerFee],
-                            ['Bank Fees', bankFee, setBankFee],
-                            ['Building Inspection', buildingInspection, setBuildingInspection],
-                            ['Pest Inspection', pestInspection, setPestInspection],
-                            ['Other', otherFees, setOtherFees]].map(([lbl, val, setter]) => (
-                            <div key={lbl} className="adv-row">
-                              <span>{lbl}</span>
-                              <input className="adv-input" type="number" value={val} onChange={e => setter(Number(e.target.value))} />
-                            </div>
-                          ))}
-                          <div className="adv-row adv-subtotal"><span>Total Fees</span><span>{fmt(fees)}</span></div>
-                        </>
-                    }
-                    {ratesAdj > 0 && <div className="adv-row"><span>Rates Adjustment</span><span>{fmt(ratesAdj)}</span></div>}
-                    {fhog > 0 && <div className="adv-row" style={{ color: 'var(--success)' }}><span>FHOG Grant</span><span>−{fmt(fhog)}</span></div>}
-                  </div>
-
-                  <div className="adv-section">
-                    <div className="adv-section-title">
-                      Lender's Mortgage Insurance
-                      {lmiWaived && <span style={{ fontSize: '0.7rem', color: 'var(--success)', marginLeft: 6 }}>✓ Waived</span>}
-                    </div>
-                    {!lmiWaived && lmi === 0 && pv > 0 && <div className="adv-row" style={{ color: 'var(--success)' }}><span>✓ No LMI — LVR ≤ 80%</span></div>}
-                    {lmiActive && <>
-                      <div className="adv-row"><span>Base Loan</span><span>{fmt(rawBaseLoan)}</span></div>
-                      <div className="adv-row"><span>LVR</span><span>{fmtPct(totalLvr, 2)}</span></div>
-                      <div className="adv-row"><span>Premium Rate ({(lmiResult.rate * 100).toFixed(3)}%)</span><span>{fmt(lmiResult.basePremium)}</span></div>
-                      {lmiResult.dutyOnPremium > 0 && <div className="adv-row"><span>Stamp Duty on Premium</span><span>{fmt(lmiResult.dutyOnPremium)}</span></div>}
-                      <div className="adv-row adv-subtotal"><span>Total LMI</span><span>{fmt(lmi)}</span></div>
-                    </>}
-                    <div className="adv-disclaimer">
-                      Estimate only. LMI premiums vary by lender. Confirm exact premium with your lender before settlement.
-                      {lmiResult.warnings?.length > 0 && <div style={{ color: 'var(--lmi-text)', marginTop: 4 }}>{lmiResult.warnings.join(' ')}</div>}
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
-
           </div>
+
+          {/* BOTTOM EQUATION BAR */}
+          <div className="equation-bar">
+            <div className="eq-item">
+              <span className="eq-label">DEPOSIT</span>
+              <span className="eq-value">{fmt(depositManual)}</span>
+            </div>
+            <div className="eq-op">+</div>
+            <div className="eq-item">
+              <span className="eq-label">UPFRONT COSTS</span>
+              <span className="eq-value">{fmt(upfrontCosts)}</span>
+            </div>
+            <div className="eq-op">=</div>
+            <div className="eq-item eq-item-highlight">
+              <span className="eq-label eq-label-hl">CASH TO COMPLETE</span>
+              <span className="eq-value eq-value-hl">{pv > 0 ? fmt(cashToComplete) : '$—'}</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -775,7 +695,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
         {/* Property name */}
         <div className="pp-property-name">
           {label || `Property ${propIndex + 1}`}
-          <span className="pp-property-badge">{stateCode} · {propertyType}</span>
+          <span className="pp-property-badge">{stateCode} &middot; {propertyType}</span>
         </div>
 
         {/* 4 key figures */}
@@ -837,7 +757,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             {fhog > 0 && (
               <div className="pp-row" style={{ color: '#059669' }}>
                 <span className="pp-row-label">First Home Owner Grant</span>
-                <span className="pp-row-value">−{fmt(fhog)}</span>
+                <span className="pp-row-value">&minus;{fmt(fhog)}</span>
               </div>
             )}
             <div className="pp-row total">
@@ -873,7 +793,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
         <div className="pp-repayment">
           <div>
             <div className="pp-repayment-label">Estimated Monthly Repayment</div>
-            <div className="pp-repayment-detail">{fmtPct(rate, 2)} p.a. · {term} yr loan{ioTerm > 0 ? ` · ${ioTerm} yr IO` : ' · P&I'}</div>
+            <div className="pp-repayment-detail">{fmtPct(rate, 2)} p.a. &middot; {term} yr loan{ioTerm > 0 ? ` · ${ioTerm} yr IO` : ' · P&I'}</div>
           </div>
           <div className="pp-repayment-value">{fmt(repayment)}/mo</div>
         </div>
@@ -892,7 +812,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           <div className="pp-footer-contact">
             <div className="pp-date">Prepared {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
             <strong>Hunter Galloway</strong> — Mortgage Broker Brisbane<br />
-            📞 1300 088 065 &nbsp;·&nbsp; ✉ hello@huntergalloway.com.au<br />
+            1300 088 065 &nbsp;&middot;&nbsp; hello@huntergalloway.com.au<br />
             Level 10, 179 North Quay, Brisbane QLD 4000
           </div>
           <div className="pp-footer-disclaimer">
