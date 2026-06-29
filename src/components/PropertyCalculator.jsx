@@ -487,11 +487,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           <div className="sb-section">
             <div className="sb-deposit-header">
               <label className="sb-field-label">CASH TO COMPLETE</label>
-              {pv > 0 && (
-                <span className="sb-deposit-pct-badge">
-                  {(depositDisplay / pv * 100).toFixed(1)}% deposit · LVR {(100 - depositDisplay / pv * 100).toFixed(1)}%
-                </span>
-              )}
             </div>
             <div className="sb-dollar-wrap">
               <span className="sb-dollar-sign">$</span>
