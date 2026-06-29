@@ -521,6 +521,10 @@ body {
 .sb-position-deficit { background: #fee2e2; color: #dc2626; }
 .sb-position-amount { font-size: 0.82rem; font-weight: 800; }
 
+.sb-fund-tag-extra { color: #6d28d9; font-weight: 600; }
+.sb-fund-row-dim { opacity: 0.4; }
+.sb-position-sub { font-size: 0.58rem; margin-top: 1px; opacity: 0.8; }
+
 /* ── Funding Summary Card ─────────────────────────────────────────────── */
 .funding-summary-card {
   background: white;
@@ -529,14 +533,47 @@ body {
   padding: 16px 18px;
   margin-bottom: 12px;
 }
+.fsc-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
 .fsc-title {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 12px;
 }
+.fsc-add-btn {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--gold);
+  background: none;
+  border: 1.5px solid var(--gold);
+  border-radius: 20px;
+  padding: 2px 8px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+.fsc-add-btn:hover { background: var(--gold); color: white; }
+.fsc-extra-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fsc-del-btn {
+  font-size: 0.6rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 0;
+  line-height: 1;
+}
+.fsc-del-btn:hover { opacity: 1; color: #dc2626; }
 .fsc-table {
   display: grid;
   grid-template-columns: 1fr 1fr;

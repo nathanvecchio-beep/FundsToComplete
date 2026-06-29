@@ -508,44 +508,33 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
           {/* Funds Available */}
           <div className="sb-section">
-            <div className="sb-funds-header">
-              <label className="sb-field-label">FUNDS AVAILABLE</label>
-              <button className="sb-add-fund-btn" onClick={addExtraFund}>+ Add</button>
-            </div>
-            {/* Built-in savings row */}
+            <label className="sb-field-label">FUNDS AVAILABLE</label>
             <div className="sb-fund-row">
               <span className="sb-fund-tag">Savings / Deposit</span>
               <span className="sb-fund-val">{pv > 0 ? fmt(cashToComplete) : '—'}</span>
             </div>
-            {/* Extra funds */}
             {extraFunds.map(f => (
-              <div key={f.id} className="sb-fund-row sb-fund-row-extra">
-                <input
-                  className="sb-fund-label-input"
-                  value={f.label}
-                  onChange={e => updateExtraFund(f.id, 'label', e.target.value)}
-                />
-                <div className="sb-fund-amount-wrap">
-                  <span className="sb-fund-dollar">$</span>
-                  <DollarInput
-                    className="sb-fund-amount-input"
-                    value={f.amount}
-                    onChange={v => updateExtraFund(f.id, 'amount', v)}
-                    placeholder="0"
-                  />
-                </div>
-                <button className="sb-fund-del" onClick={() => removeExtraFund(f.id)}>✕</button>
+              <div key={f.id} className="sb-fund-row">
+                <span className="sb-fund-tag sb-fund-tag-extra">{f.label || 'Other Fund'}</span>
+                <span className="sb-fund-val">{fmt(f.amount)}</span>
               </div>
             ))}
-            {/* Total available */}
+            {extraFunds.length === 0 && (
+              <div className="sb-fund-row sb-fund-row-dim">
+                <span className="sb-fund-tag">Sale Proceeds</span>
+                <span className="sb-fund-val">—</span>
+              </div>
+            )}
             <div className="sb-fund-total-row">
               <span className="sb-fund-total-label">Total Available</span>
               <span className="sb-fund-total-val">{pv > 0 ? fmt(totalAvailable) : '—'}</span>
             </div>
-            {/* Summary position pill */}
             {pv > 0 && extraFundsTotal > 0 && (
               <div className={`sb-position-pill ${hasSurplus ? 'sb-position-surplus' : 'sb-position-deficit'}`}>
-                <span>{hasSurplus ? '✓ Surplus' : '⚠ Shortfall'}</span>
+                <div>
+                  <div>{hasSurplus ? '✓ Surplus' : '⚠ Shortfall'}</div>
+                  <div className="sb-position-sub">{hasSurplus ? 'Funds cover all costs' : 'Additional funds needed'}</div>
+                </div>
                 <span className="sb-position-amount">{fmt(Math.abs(summaryPosition))}</span>
               </div>
             )}
@@ -789,17 +778,25 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           {/* FUNDING SUMMARY TABLE */}
           {pv > 0 && (
             <div className="funding-summary-card">
-              <div className="fsc-title">FUNDING SUMMARY</div>
+              <div className="fsc-header-row">
+                <div className="fsc-title">FUNDING SUMMARY</div>
+                <button className="fsc-add-btn" onClick={addExtraFund}>+ Add Fund</button>
+              </div>
               <div className="fsc-table">
                 <div className="fsc-col">
                   <div className="fsc-col-head">Funds Available</div>
                   <div className="fsc-row"><span>Savings / Deposit</span><span>{fmt(cashToComplete)}</span></div>
                   {extraFunds.map(f => (
-                    <div key={f.id} className="fsc-row fsc-row-extra"><span>{f.label || 'Other'}</span><span>{fmt(f.amount)}</span></div>
+                    <div key={f.id} className="fsc-row fsc-row-extra">
+                      <span>{f.label || 'Other'}</span>
+                      <span className="fsc-extra-right">
+                        {fmt(f.amount)}
+                        <button className="fsc-del-btn" onClick={() => removeExtraFund(f.id)}>✕</button>
+                      </span>
+                    </div>
                   ))}
-                  {extraFunds.length === 0 && (
-                    <div className="fsc-row fsc-row-empty"><span>Sale Proceeds</span><span>—</span></div>
-                  )}
+                  <div className="fsc-row fsc-row-empty"><span>Sale Proceeds</span><span>—</span></div>
+                  <div className="fsc-row fsc-row-empty"><span>Gift / Other</span><span>—</span></div>
                   <div className="fsc-total"><span>Total Available</span><span>{fmt(totalAvailable)}</span></div>
                 </div>
                 <div className="fsc-col fsc-col-right">
