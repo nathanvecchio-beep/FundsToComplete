@@ -143,19 +143,28 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [totalLoanOverride, setTotalLoanOverride] = useState(false);
   const [totalLoanManual, setTotalLoanManual] = useState(0);
 
-  // Always use depositOverride = true in new UI
-  const depositOverride = true;
+  const [depositOverride, setDepositOverride] = useState(false);
   const [depositManual, setDepositManual] = useState(0);
 
-  // Auto-set deposit to 20% when property value is first set
+  // Deposit display value — tracks what the sidebar shows.
+  // We drive the loan via baseLvr (% of property), not via depositOverride,
+  // so the loan stays clean (80% of PV) and costs are separate.
+  const [depositDisplay, setDepositDisplay] = useState(0);
+
+  // When PV first becomes > 0, set deposit display to 20% and lock LVR at 80%
   const pvInitialized = useRef(false);
   useEffect(() => {
     const pv = Number(propertyValue) || 0;
     if (pv > 0 && !pvInitialized.current) {
       pvInitialized.current = true;
-      if (depositManual === 0) {
-        setDepositManual(Math.round(pv * 0.2));
-      }
+      const d = Math.round(pv * 0.2);
+      setDepositDisplay(d);
+      setBaseLvrManual(80);
+      setBaseLvrOverride(true);
+    } else if (pv > 0 && pvInitialized.current && baseLvrOverride) {
+      // PV changed — recalculate deposit display from existing LVR
+      const lvr = Number(baseLvrManual);
+      setDepositDisplay(Math.round(pv * (1 - lvr / 100)));
     }
   }, [propertyValue]);
 
@@ -336,15 +345,29 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   };
 
   // Computed values for new UI
-  const depositPct = pv > 0 ? Math.round(depositManual / pv * 100) : 20;
-  const loanNeeded = Math.max(0, pv - depositManual);
+  // depositDisplay is the sidebar input; loan = PV × (1 - depositDisplay/PV) via baseLvr
+  const depositPct = pv > 0 ? Math.round(depositDisplay / pv * 100) : 20;
+  const loanNeeded = Math.max(0, pv - depositDisplay);
   const upfrontCosts = Math.max(0, fundsRequired - pv);
-  const cashToComplete = contribution;
+  // cashToComplete = deposit + upfront costs (contribution when loan = PV × LVR)
+  const cashToComplete = depositDisplay + upfrontCosts;
 
   // Proportion bar
-  const totalBar = depositManual + upfrontCosts;
-  const depositBarPct = totalBar > 0 ? (depositManual / totalBar * 100) : 70;
+  const totalBar = depositDisplay + upfrontCosts;
+  const depositBarPct = totalBar > 0 ? (depositDisplay / totalBar * 100) : 70;
   const costsBarPct = totalBar > 0 ? (upfrontCosts / totalBar * 100) : 30;
+
+  const handleDepositChange = (v) => {
+    setDepositDisplay(v);
+    if (pv > 0) {
+      const lvr = Math.max(0, Math.min(100, ((pv - v) / pv) * 100));
+      setBaseLvrManual(Math.round(lvr * 100) / 100);
+      setBaseLvrOverride(true);
+    }
+    setBaseLoanOverride(false);
+    setDepositOverride(false);
+    setTotalLoanOverride(false);
+  };
 
   return (
     <>
@@ -387,13 +410,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               <span className="sb-dollar-sign">$</span>
               <DollarInput
                 className="sb-pv-input"
-                value={depositManual}
-                onChange={v => {
-                  setDepositManual(v);
-                  setBaseLoanOverride(false);
-                  setBaseLvrOverride(false);
-                  setTotalLoanOverride(false);
-                }}
+                value={depositDisplay}
+                onChange={handleDepositChange}
                 placeholder="150,000"
               />
             </div>
@@ -403,14 +421,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               min={0}
               max={pv || 1000000}
               step={1000}
-              value={depositManual}
-              onChange={e => {
-                const v = Number(e.target.value);
-                setDepositManual(v);
-                setBaseLoanOverride(false);
-                setBaseLvrOverride(false);
-                setTotalLoanOverride(false);
-              }}
+              value={depositDisplay}
+              onChange={e => handleDepositChange(Number(e.target.value))}
             />
             <div className="sb-loan-needed">
               Loan needed: <strong>{pv > 0 ? fmt(loanNeeded) : '—'}</strong>
@@ -560,7 +572,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
             <div className="hero-main">
               <div className="hero-gold-label">CASH YOU NEED TO COMPLETE</div>
               <div className="hero-big-number">
-                {pv > 0 ? fmt(contribution) : '$—'}
+                {pv > 0 ? fmt(cashToComplete) : '$—'}
               </div>
               <div className="hero-subtitle">
                 {pv > 0
@@ -598,7 +610,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               <div className="funds-legend">
                 <div className="funds-legend-item">
                   <span className="fli-dot fli-dot-dark" />
-                  <span>Deposit {fmt(depositManual)} &middot; {depositBarPct.toFixed(0)}%</span>
+                  <span>Deposit {fmt(depositDisplay)} &middot; {depositBarPct.toFixed(0)}%</span>
                 </div>
                 <div className="funds-legend-item">
                   <span className="fli-dot fli-dot-gold" />
@@ -655,7 +667,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           <div className="equation-bar">
             <div className="eq-item">
               <span className="eq-label">DEPOSIT</span>
-              <span className="eq-value">{fmt(depositManual)}</span>
+              <span className="eq-value">{fmt(depositDisplay)}</span>
             </div>
             <div className="eq-op">+</div>
             <div className="eq-item">
