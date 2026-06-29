@@ -474,21 +474,29 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               options={PURPOSES} />
           </div>
 
-          {/* Deposit */}
+          {/* Cash to Complete */}
           <div className="sb-section">
-            {/* Deposit input — drives LVR and updates hero cash to complete */}
             <div className="sb-deposit-header">
-              <label className="sb-field-label">DEPOSIT AMOUNT</label>
+              <label className="sb-field-label">CASH TO COMPLETE</label>
               {pv > 0 && (
                 <span className="sb-deposit-pct-badge">
-                  {(depositDisplay / pv * 100).toFixed(1)}% · LVR {(100 - depositDisplay / pv * 100).toFixed(1)}%
+                  LVR {(100 - depositDisplay / pv * 100).toFixed(1)}%
                 </span>
               )}
             </div>
-            <div className="sb-dollar-wrap">
+            <div className="sb-cash-total">
+              {pv > 0 ? fmt(cashToComplete) : '$—'}
+            </div>
+            {pv > 0 && (
+              <div className="sb-cash-breakdown">
+                Deposit {fmt(depositDisplay)} ({(depositDisplay / pv * 100).toFixed(1)}%) + Costs {fmt(upfrontCosts)}
+              </div>
+            )}
+            <div className="sb-deposit-sub-label">Adjust deposit</div>
+            <div className="sb-deposit-sub-row">
               <span className="sb-dollar-sign">$</span>
               <DollarInput
-                className="sb-pv-input"
+                className="sb-pv-input sb-pv-input-sm"
                 value={depositDisplay}
                 onChange={handleDepositChange}
                 placeholder="150,000"

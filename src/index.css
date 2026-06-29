@@ -374,6 +374,38 @@ body {
   margin-top: 4px;
 }
 .sb-loan-needed strong { color: var(--primary); }
+.sb-cash-total {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sb-cash-breakdown {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.sb-deposit-sub-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.sb-deposit-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sb-pv-input-sm {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: var(--primary) !important;
+}
 
 /* Sidebar toggle items */
 .sb-toggle-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
