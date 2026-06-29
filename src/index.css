@@ -407,6 +407,211 @@ body {
   color: var(--primary) !important;
 }
 
+/* ── Funds Available sidebar section ──────────────────────────────────── */
+.sb-funds-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.sb-add-fund-btn {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--gold);
+  background: none;
+  border: 1.5px solid var(--gold);
+  border-radius: 20px;
+  padding: 2px 8px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+.sb-add-fund-btn:hover { background: var(--gold); color: white; }
+.sb-fund-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px dashed rgba(0,0,0,0.08);
+}
+.sb-fund-tag {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex: 1;
+}
+.sb-fund-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.sb-fund-row-extra {
+  gap: 4px;
+}
+.sb-fund-label-input {
+  flex: 1;
+  font-size: 0.68rem;
+  border: none;
+  background: rgba(0,0,0,0.04);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--primary);
+  outline: none;
+  min-width: 0;
+}
+.sb-fund-amount-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.sb-fund-dollar { font-size: 0.68rem; color: var(--text-muted); }
+.sb-fund-amount-input {
+  width: 72px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary);
+  border: none;
+  background: transparent;
+  outline: none;
+  text-align: right;
+}
+.sb-fund-del {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  opacity: 0.5;
+  line-height: 1;
+}
+.sb-fund-del:hover { opacity: 1; color: #dc2626; }
+.sb-fund-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0 2px;
+  border-top: 2px solid var(--primary);
+  margin-top: 3px;
+}
+.sb-fund-total-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sb-fund-total-val {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+.sb-position-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.sb-position-surplus { background: #dcfce7; color: #15803d; }
+.sb-position-deficit { background: #fee2e2; color: #dc2626; }
+.sb-position-amount { font-size: 0.82rem; font-weight: 800; }
+
+/* ── Funding Summary Card ─────────────────────────────────────────────── */
+.funding-summary-card {
+  background: white;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0,0,0,0.08);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.fsc-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.fsc-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.fsc-col { padding: 12px 14px; }
+.fsc-col-right { border-left: 1px solid rgba(0,0,0,0.08); background: rgba(0,0,0,0.015); }
+.fsc-col-head {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid rgba(0,0,0,0.08);
+  margin-bottom: 6px;
+}
+.fsc-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  border-bottom: 1px dashed rgba(0,0,0,0.06);
+}
+.fsc-row:last-of-type { border-bottom: none; }
+.fsc-row span:last-child { font-weight: 600; color: var(--primary); }
+.fsc-row-extra span:first-child { color: #6d28d9; font-weight: 600; }
+.fsc-row-lmi span { color: #d97706 !important; }
+.fsc-row-credit span { color: #16a34a !important; }
+.fsc-row-empty { opacity: 0.4; }
+.fsc-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0 0;
+  margin-top: 5px;
+  border-top: 2px solid rgba(0,0,0,0.1);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.fsc-total span:last-child { color: var(--gold); }
+.fsc-position {
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.fsc-surplus { background: #dcfce7; border: 1.5px solid #86efac; }
+.fsc-deficit { background: #fee2e2; border: 1.5px solid #fca5a5; }
+.fsc-position-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.fsc-surplus .fsc-position-label { color: #15803d; }
+.fsc-deficit .fsc-position-label { color: #dc2626; }
+.fsc-position-sub {
+  font-size: 0.62rem;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.fsc-surplus .fsc-position-sub { color: #166534; }
+.fsc-deficit .fsc-position-sub { color: #b91c1c; }
+.fsc-position-amount {
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+.fsc-surplus .fsc-position-amount { color: #16a34a; }
+.fsc-deficit .fsc-position-amount { color: #dc2626; }
+
 /* Sidebar toggle items */
 .sb-toggle-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
 .sb-toggle-item:last-child { border-bottom: none; }
