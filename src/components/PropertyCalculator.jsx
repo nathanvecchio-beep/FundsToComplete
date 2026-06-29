@@ -474,24 +474,9 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               options={PURPOSES} />
           </div>
 
-          {/* Cash to Complete summary + Deposit control */}
+          {/* Deposit */}
           <div className="sb-section">
-            {/* Total cash summary — the headline number */}
-            <div className="sb-cash-summary">
-              <div className="sb-cash-summary-label">Your Cash to Complete</div>
-              <div className="sb-cash-summary-amount">
-                {pv > 0 ? fmt(cashToComplete) : '—'}
-              </div>
-              {pv > 0 && (
-                <div className="sb-cash-summary-breakdown">
-                  <span>{fmt(depositDisplay)} deposit</span>
-                  <span className="sb-cash-plus"> + </span>
-                  <span>{fmt(upfrontCosts)} costs</span>
-                </div>
-              )}
-            </div>
-
-            {/* Deposit input — drives LVR */}
+            {/* Deposit input — drives LVR and updates hero cash to complete */}
             <div className="sb-deposit-header">
               <label className="sb-field-label">DEPOSIT AMOUNT</label>
               {pv > 0 && (
