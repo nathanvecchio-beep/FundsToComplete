@@ -483,34 +483,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               options={PURPOSES} />
           </div>
 
-          {/* Cash to Complete */}
-          <div className="sb-section">
-            <div className="sb-deposit-header">
-              <label className="sb-field-label">CASH TO COMPLETE</label>
-            </div>
-            <div className="sb-dollar-wrap">
-              <span className="sb-dollar-sign">$</span>
-              <DollarInput
-                className="sb-pv-input"
-                value={pv > 0 ? cashToComplete : 0}
-                onChange={v => handleDepositChange(Math.max(0, v - upfrontCosts))}
-                placeholder="120,000"
-              />
-            </div>
-            <input
-              type="range"
-              className="sb-deposit-slider"
-              min={0}
-              max={pv || 1000000}
-              step={1000}
-              value={depositDisplay}
-              onChange={e => handleDepositChange(Number(e.target.value))}
-            />
-            <div className="sb-loan-needed">
-              Loan needed: <strong>{pv > 0 ? fmt(loanNeeded) : '—'}</strong>
-            </div>
-          </div>
-
           {/* Buyer Profile */}
           <div className="sb-section">
             <SbToggle label="First home buyer" checked={firstHome} onChange={setFirstHome} />
