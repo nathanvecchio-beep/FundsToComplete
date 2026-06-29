@@ -706,6 +706,12 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                 valueClass={lmiActive ? 'hsc-lmi' : ''}
                 sub={lmiActive ? '⚠ LMI applies' : (pv > 0 ? '✓ No LMI' : null)}
               />
+              {/* Stamp duty card */}
+              <div className="hero-stat-card">
+                <div className="hsc-label">STAMP DUTY</div>
+                <div className="hsc-value">{pv > 0 ? fmt(netStampDuty) : '$—'}</div>
+                {pv > 0 && <div className="hsc-sub">{stateCode} — {propertyType}</div>}
+              </div>
             </div>
           </div>
 
