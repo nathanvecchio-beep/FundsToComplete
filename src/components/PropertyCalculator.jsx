@@ -404,14 +404,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
   const handleDepositChange = (v) => {
     setDepositDisplay(v);
-    if (pv > 0) {
-      const lvr = Math.max(0, Math.min(100, ((pv - v) / pv) * 100));
-      setBaseLvrManual(Math.round(lvr * 100) / 100);
-      setBaseLvrOverride(true);
-    }
-    setBaseLoanOverride(false);
-    setDepositOverride(false);
-    setTotalLoanOverride(false);
   };
 
   return (
