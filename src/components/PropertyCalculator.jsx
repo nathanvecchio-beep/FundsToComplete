@@ -615,18 +615,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
           {/* HERO SECTION */}
           <div className="hero-section">
-            <div className="hero-main">
-              <div className="hero-gold-label">CASH YOU NEED TO COMPLETE</div>
-              <div className="hero-big-number">
-                {pv > 0 ? fmt(cashToComplete) : '$—'}
-              </div>
-              <div className="hero-subtitle">
-                {pv > 0
-                  ? `Your ${depositPct}% deposit plus all upfront costs to settle a ${fmt(pv)} home in ${state}.`
-                  : 'Enter a property value to see your funds to complete.'
-                }
-              </div>
-            </div>
             <div className="hero-stat-cards">
               <EditableStatCard
                 label={lmiActive && capLMI ? 'TOTAL LOAN (INCL. LMI)' : 'HOME LOAN'}
