@@ -383,7 +383,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     setTotalLoanOverride(false);
     setBaseLvrOverride(false);
     setDepositOverride(false);
-    if (pv > 0) setDepositDisplay(Math.max(0, pv - v));
   };
 
   const handleLvrEdit = (v) => {
