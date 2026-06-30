@@ -564,6 +564,8 @@ body {
   text-transform: uppercase;
   color: var(--text-muted);
 }
+.fsc-add-fund-btn { border-color: #22c55e !important; color: #22c55e !important; }
+.fsc-add-fund-btn:hover { background: #22c55e !important; color: white !important; }
 .fsc-add-debt-btn { border-color: #dc2626 !important; color: #dc2626 !important; }
 .fsc-add-debt-btn:hover { background: #dc2626 !important; color: white !important; }
 .fsc-input-row {
