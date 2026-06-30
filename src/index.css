@@ -775,6 +775,43 @@ body {
 .fsc-draft-label::placeholder { color: #bbb; }
 .fsc-draft-label:focus { background: rgba(0,0,0,0.03); border-radius: 3px; padding-left: 2px; }
 .fsc-draft-amount .fsc-edit-input::placeholder { color: #ddd; font-weight: 400; }
+/* + Fund / + Debt buttons */
+.fsc-add-item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 8px 0 4px;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(0,0,0,0.13);
+  background: #f5f5f5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.fsc-add-item-btn:hover { background: #ebebeb; border-color: rgba(0,0,0,0.2); }
+.fsc-add-item-plus { font-size: 1rem; line-height: 1; font-weight: 300; }
+.fsc-add-fund-btn .fsc-add-item-plus { color: #22c55e; }
+.fsc-add-debt-btn .fsc-add-item-plus { color: #dc2626; }
+/* Bordered label input for user-entered rows */
+.fsc-label-input-bordered {
+  border: 1.5px solid rgba(0,0,0,0.13) !important;
+  border-radius: 7px !important;
+  padding: 4px 8px !important;
+  background: white !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07) !important;
+  font-size: 0.74rem !important;
+  color: #1a1a1a !important;
+}
+.fsc-label-input-bordered:focus {
+  border-color: rgba(245,164,31,0.6) !important;
+  box-shadow: 0 0 0 2px rgba(245,164,31,0.1) !important;
+  outline: none;
+}
+.fsc-row-user { align-items: center; gap: 8px; }
+
 /* Read-only auto-calculated amounts */
 .fsc-readonly-amount {
   display: flex;

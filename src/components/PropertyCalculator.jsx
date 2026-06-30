@@ -229,37 +229,19 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [includeRates, setIncludeRates] = useState(false);
   const [ratesAmount, setRatesAmount] = useState(800);
 
-  // ── Extra funds (sale proceeds, gifts, etc.) ─────────────────────────────
+  // ── Extra funds (sale proceeds, gifts, shares, etc.) ─────────────────────
   const [extraFunds, setExtraFunds] = useState([]);
+  const addExtraFund = () => setExtraFunds(f => [...f, { id: Date.now(), label: '', amount: 0 }]);
   const removeExtraFund = (id) => setExtraFunds(f => f.filter(x => x.id !== id));
   const updateExtraFund = (id, field, value) => setExtraFunds(f => f.map(x => x.id === id ? { ...x, [field]: value } : x));
   const extraFundsTotal = extraFunds.reduce((s, f) => s + (Number(f.amount) || 0), 0);
-  // Draft row state for always-visible add row
-  const [draftFundLabel, setDraftFundLabel] = useState('');
-  const [draftFundAmount, setDraftFundAmount] = useState(0);
-  const commitDraftFund = () => {
-    if (draftFundLabel.trim()) {
-      setExtraFunds(f => [...f, { id: Date.now(), label: draftFundLabel.trim(), amount: draftFundAmount }]);
-      setDraftFundLabel('');
-      setDraftFundAmount(0);
-    }
-  };
 
   // ── Debts to close ────────────────────────────────────────────────────────
   const [debts, setDebts] = useState([]);
+  const addDebt = () => setDebts(d => [...d, { id: Date.now(), label: '', amount: 0 }]);
   const removeDebt = (id) => setDebts(d => d.filter(x => x.id !== id));
   const updateDebt = (id, field, value) => setDebts(d => d.map(x => x.id === id ? { ...x, [field]: value } : x));
   const debtsTotal = debts.reduce((s, d) => s + (Number(d.amount) || 0), 0);
-  // Draft row for debts
-  const [draftDebtLabel, setDraftDebtLabel] = useState('');
-  const [draftDebtAmount, setDraftDebtAmount] = useState(0);
-  const commitDraftDebt = () => {
-    if (draftDebtLabel.trim()) {
-      setDebts(d => [...d, { id: Date.now(), label: draftDebtLabel.trim(), amount: draftDebtAmount }]);
-      setDraftDebtLabel('');
-      setDraftDebtAmount(0);
-    }
-  };
 
   const stateCode = STATE_CODES[state] || 'NSW';
   const lmiWaived = fhgScheme || profLmi || famGuarantor;
@@ -407,24 +389,18 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     if (pv > 0) setDepositDisplay(Math.round(pv * (1 - clamped / 100)));
   };
 
-  // Computed values for new UI
-  // depositDisplay is the sidebar input; loan = PV × (1 - depositDisplay/PV) via baseLvr
-  const depositPct = pv > 0 ? Math.round(depositDisplay / pv * 100) : 20;
-  const loanNeeded = Math.max(0, pv - depositDisplay);
+  // Derived display values
+  const depositPct = pv > 0 ? Math.round(depositDisplay / pv * 100) : 0;
   const upfrontCosts = Math.max(0, fundsRequired - pv);
-  // cashToComplete = deposit + upfront costs (contribution when loan = PV × LVR)
-  const cashToComplete = depositDisplay + upfrontCosts;
 
-  // Funding summary position
-  const totalAvailable = cashToComplete + extraFundsTotal;
-  const totalRequired = cashToComplete + debtsTotal;
+  // Restructured totals: Available = loan + deposit + extra funds
+  //                      Required  = purchase price + costs + debts
+  const loanForTotal = rawBaseLoan > 0 ? totalLoan : 0;
+  const totalAvailable = loanForTotal + depositDisplay + extraFundsTotal;
+  const totalRequired = pv + netStampDuty + transferFee + mortgageReg + fees
+    + (lmiActive && !capLMI ? lmi : 0) - fhog + debtsTotal;
   const summaryPosition = totalAvailable - totalRequired;
   const hasSurplus = summaryPosition >= 0;
-
-  // Proportion bar
-  const totalBar = depositDisplay + upfrontCosts;
-  const depositBarPct = totalBar > 0 ? (depositDisplay / totalBar * 100) : 70;
-  const costsBarPct = totalBar > 0 ? (upfrontCosts / totalBar * 100) : 30;
 
   const handleDepositChange = (v) => {
     setDepositDisplay(v);
@@ -652,25 +628,42 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   <div className="fsc-col-head-row">
                     <div className="fsc-col-head">Funds Available</div>
                   </div>
-                  {/* Editable savings/deposit row */}
+
+                  {/* Home Loan — first */}
+                  <div className="fsc-row fsc-row-editable">
+                    <span>Home Loan</span>
+                    <span className="fsc-edit-amount">
+                      <span className="fsc-edit-dollar">$</span>
+                      <DollarInput
+                        className="fsc-edit-input"
+                        value={rawBaseLoan > 0 ? totalLoan : 0}
+                        onChange={v => handleLoanEdit(v)}
+                        placeholder="0"
+                      />
+                    </span>
+                  </div>
+
+                  {/* Savings / Deposit */}
                   <div className="fsc-row fsc-row-editable">
                     <span>Savings / Deposit</span>
                     <span className="fsc-edit-amount">
                       <span className="fsc-edit-dollar">$</span>
                       <DollarInput
                         className="fsc-edit-input"
-                        value={cashToComplete}
-                        onChange={v => handleDepositChange(Math.max(0, v - upfrontCosts))}
+                        value={depositDisplay}
+                        onChange={v => handleDepositChange(v)}
                         placeholder="0"
                       />
                     </span>
                   </div>
-                  {/* Saved extra funds */}
+
+                  {/* User-added fund sources */}
                   {extraFunds.map(f => (
-                    <div key={f.id} className="fsc-row fsc-row-extra">
+                    <div key={f.id} className="fsc-row fsc-row-user">
                       <input
-                        className="fsc-label-input"
+                        className="fsc-label-input fsc-label-input-bordered"
                         value={f.label}
+                        placeholder="e.g. Shares, Gift, Sale proceeds…"
                         onChange={e => updateExtraFund(f.id, 'label', e.target.value)}
                       />
                       <span className="fsc-edit-amount">
@@ -680,51 +673,39 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                       </span>
                     </div>
                   ))}
-                  {/* Always-visible draft add row */}
-                  <div className="fsc-draft-row">
-                    <span className="fsc-draft-plus">+</span>
-                    <input
-                      className="fsc-draft-label"
-                      value={draftFundLabel}
-                      placeholder="Add a fund source…"
-                      onChange={e => setDraftFundLabel(e.target.value)}
-                      onBlur={commitDraftFund}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
-                    />
-                    <span className="fsc-edit-amount fsc-draft-amount">
-                      <span className="fsc-edit-dollar">$</span>
-                      <DollarInput
-                        className="fsc-edit-input"
-                        value={draftFundAmount}
-                        onChange={v => setDraftFundAmount(v)}
-                        placeholder="0"
-                      />
-                    </span>
-                  </div>
+
+                  <button className="fsc-add-item-btn fsc-add-fund-btn" onClick={addExtraFund}>
+                    <span className="fsc-add-item-plus">+</span> Fund
+                  </button>
+
                   <div className="fsc-total"><span>Total Available</span><span>{fmt(totalAvailable)}</span></div>
                 </div>
 
-                {/* RIGHT — Funds Required + Debts */}
+                {/* RIGHT — Funds Required */}
                 <div className="fsc-col fsc-col-right">
                   <div className="fsc-col-head-row">
                     <div className="fsc-col-head">Funds Required</div>
                   </div>
-                  <div className="fsc-row"><span>Deposit{pv > 0 ? ` (${(depositDisplay / pv * 100).toFixed(0)}%)` : ''}</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(depositDisplay).toLocaleString()}</span></span></div>
+
+                  {/* Purchase price */}
+                  <div className="fsc-row"><span>Purchase Price</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{pv > 0 ? pv.toLocaleString() : '—'}</span></span></div>
                   <div className="fsc-row"><span>Stamp Duty</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(netStampDuty).toLocaleString()}</span></span></div>
                   <div className="fsc-row"><span>Transfer &amp; Reg Fees</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(transferFee + mortgageReg).toLocaleString()}</span></span></div>
                   <div className="fsc-row"><span>Legal &amp; Bank Fees</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(fees).toLocaleString()}</span></span></div>
-                  {lmiActive && !capLMI && <div className="fsc-row fsc-row-lmi"><span>LMI (upfront)</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(lmi).toLocaleString()}</span></span></div>}
+                  {lmiActive && !capLMI && <div className="fsc-row"><span>LMI (upfront)</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(lmi).toLocaleString()}</span></span></div>}
                   {fhog > 0 && <div className="fsc-row fsc-row-credit"><span>FHOG Grant</span><span className="fsc-readonly-amount fsc-readonly-credit"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">−{Math.round(fhog).toLocaleString()}</span></span></div>}
 
                   {/* Debts to Close */}
                   <div className="fsc-debts-divider">
                     <span className="fsc-debts-label">Debts to Close</span>
                   </div>
+
                   {debts.map(d => (
-                    <div key={d.id} className="fsc-row fsc-row-extra">
+                    <div key={d.id} className="fsc-row fsc-row-user">
                       <input
-                        className="fsc-label-input"
+                        className="fsc-label-input fsc-label-input-bordered"
                         value={d.label}
+                        placeholder="e.g. Credit card, Car loan…"
                         onChange={e => updateDebt(d.id, 'label', e.target.value)}
                       />
                       <span className="fsc-edit-amount">
@@ -734,63 +715,30 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                       </span>
                     </div>
                   ))}
-                  {/* Always-visible draft add row for debts */}
-                  <div className="fsc-draft-row fsc-draft-row-debt">
-                    <span className="fsc-draft-plus fsc-draft-plus-debt">+</span>
-                    <input
-                      className="fsc-draft-label"
-                      value={draftDebtLabel}
-                      placeholder="Add a debt to close…"
-                      onChange={e => setDraftDebtLabel(e.target.value)}
-                      onBlur={commitDraftDebt}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
-                    />
-                    <span className="fsc-edit-amount fsc-draft-amount">
-                      <span className="fsc-edit-dollar">$</span>
-                      <DollarInput
-                        className="fsc-edit-input"
-                        value={draftDebtAmount}
-                        onChange={v => setDraftDebtAmount(v)}
-                        placeholder="0"
-                      />
-                    </span>
-                  </div>
+
+                  <button className="fsc-add-item-btn fsc-add-debt-btn" onClick={addDebt}>
+                    <span className="fsc-add-item-plus">+</span> Debt
+                  </button>
 
                   <div className="fsc-total"><span>Total Required</span><span>{fmt(totalRequired)}</span></div>
                 </div>
               </div>
 
               {/* Summary Position */}
-              {pv > 0 && <div className={`fsc-position ${hasSurplus ? 'fsc-surplus' : 'fsc-deficit'}`}>
-                <div>
-                  <div className="fsc-position-label">{hasSurplus ? '✓ Summary Position — Surplus' : '⚠ Summary Position — Shortfall'}</div>
-                  <div className="fsc-position-sub">
-                    {hasSurplus
-                      ? (extraFundsTotal > 0 || debtsTotal > 0) ? "Client's funds cover all costs and debts to close" : 'Savings cover all upfront costs and deposit'
-                      : `Client is short by ${fmt(Math.abs(summaryPosition))} — consider additional funds or a higher LVR`}
+              {pv > 0 && (
+                <div className={`fsc-position ${hasSurplus ? 'fsc-surplus' : 'fsc-deficit'}`}>
+                  <div>
+                    <div className="fsc-position-label">{hasSurplus ? '✓ Summary Position — Surplus' : '⚠ Summary Position — Shortfall'}</div>
+                    <div className="fsc-position-sub">
+                      {hasSurplus
+                        ? "Available funds exceed all purchase costs and debts to close"
+                        : `Shortfall of ${fmt(Math.abs(summaryPosition))} — consider increasing loan or additional funds`}
+                    </div>
                   </div>
+                  <div className="fsc-position-amount">{fmt(Math.abs(summaryPosition))}</div>
                 </div>
-                <div className="fsc-position-amount">{(extraFundsTotal > 0 || debtsTotal > 0) ? fmt(Math.abs(summaryPosition)) : '—'}</div>
-              </div>}
+              )}
             </div>
-
-          {/* BOTTOM EQUATION BAR */}
-          <div className="equation-bar">
-            <div className="eq-item">
-              <span className="eq-label">DEPOSIT</span>
-              <span className="eq-value">{fmt(depositDisplay)}</span>
-            </div>
-            <div className="eq-op">+</div>
-            <div className="eq-item">
-              <span className="eq-label">UPFRONT COSTS</span>
-              <span className="eq-value">{fmt(upfrontCosts)}</span>
-            </div>
-            <div className="eq-op">=</div>
-            <div className="eq-item eq-item-highlight">
-              <span className="eq-label eq-label-hl">CASH TO COMPLETE</span>
-              <span className="eq-value eq-value-hl">{pv > 0 ? fmt(cashToComplete) : '$—'}</span>
-            </div>
-          </div>
 
         </div>
       </div>
