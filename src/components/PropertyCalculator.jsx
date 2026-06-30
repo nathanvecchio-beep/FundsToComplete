@@ -236,6 +236,14 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const updateExtraFund = (id, field, value) => setExtraFunds(f => f.map(x => x.id === id ? { ...x, [field]: value } : x));
   const extraFundsTotal = extraFunds.reduce((s, f) => s + (Number(f.amount) || 0), 0);
 
+  // ── Sundry fees (user-fillable in Funds Required) ────────────────────────
+  const [lenderSetupFees, setLenderSetupFees] = useState(0);
+  const [clientLegalFees, setClientLegalFees] = useState(0);
+  const [mortgageDischargeFees, setMortgageDischargeFees] = useState(0);
+  const [otherDischargeFees, setOtherDischargeFees] = useState(0);
+  const [otherSundries, setOtherSundries] = useState(0);
+  const sundryTotal = lenderSetupFees + clientLegalFees + mortgageDischargeFees + otherDischargeFees + otherSundries;
+
   // ── Debts to close ────────────────────────────────────────────────────────
   const [debts, setDebts] = useState([]);
   const addDebt = () => setDebts(d => [...d, { id: Date.now(), label: '', amount: 0 }]);
@@ -397,7 +405,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   //                      Required  = purchase price + costs + debts
   const loanForTotal = rawBaseLoan > 0 ? totalLoan : 0;
   const totalAvailable = loanForTotal + depositDisplay + extraFundsTotal;
-  const totalRequired = pv + netStampDuty + transferFee + mortgageReg + fees
+  const totalRequired = pv + netStampDuty + transferFee + mortgageReg + sundryTotal
     + (lmiActive && !capLMI ? lmi : 0) - fhog + debtsTotal;
   const summaryPosition = totalAvailable - totalRequired;
   const hasSurplus = summaryPosition >= 0;
@@ -663,12 +671,12 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   {[
                     ['Purchase Price', pv > 0 ? pv.toLocaleString() : '—'],
                     ['Stamp Duty', Math.round(netStampDuty).toLocaleString()],
-                    ['Transfer & Reg Fees', Math.round(transferFee + mortgageReg).toLocaleString()],
-                    ['Legal & Bank Fees', Math.round(fees).toLocaleString()],
+                    ['Transfer Fees', Math.round(transferFee).toLocaleString()],
+                    ['Mortgage Registration', Math.round(mortgageReg).toLocaleString()],
                     ...( lmiActive && !capLMI ? [['LMI (upfront)', Math.round(lmi).toLocaleString()]] : [] ),
-                  ].map(([label, val]) => (
-                    <div key={label} className="fsc-row">
-                      <span className="fsc-row-label">{label}</span>
+                  ].map(([lbl, val]) => (
+                    <div key={lbl} className="fsc-row">
+                      <span className="fsc-row-label">{lbl}</span>
                       <div className="fsc-amt-wrap">
                         <span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{val}</span></span>
                         <div className="fsc-del-spacer" />
@@ -684,6 +692,26 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                       </div>
                     </div>
                   )}
+
+                  <div className="fsc-debts-divider">
+                    <span className="fsc-debts-label">Sundry Fees</span>
+                  </div>
+
+                  {[
+                    ['Lender Setup Fees', lenderSetupFees, setLenderSetupFees],
+                    ['Client Legal Fees', clientLegalFees, setClientLegalFees],
+                    ['Mortgage Discharge Fees', mortgageDischargeFees, setMortgageDischargeFees],
+                    ['Other Discharge Fees', otherDischargeFees, setOtherDischargeFees],
+                    ['Other / Sundries', otherSundries, setOtherSundries],
+                  ].map(([lbl, val, setter]) => (
+                    <div key={lbl} className="fsc-row">
+                      <span className="fsc-row-label">{lbl}</span>
+                      <div className="fsc-amt-wrap">
+                        <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={val} onChange={setter} placeholder="0" /></span>
+                        <div className="fsc-del-spacer" />
+                      </div>
+                    </div>
+                  ))}
 
                   <div className="fsc-debts-divider">
                     <span className="fsc-debts-label">Debts to Close</span>
