@@ -521,39 +521,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   </div>
                 )}
                 <SbToggle
-                  label="Rates Adjustment"
-                  sub="Council/water at settlement"
-                  checked={includeRates}
-                  onChange={setIncludeRates}
-                  info="Buyers typically reimburse seller for prepaid council/water rates."
-                />
-                {includeRates && (
-                  <div className="sb-sub-input">
-                    <span>Amount</span>
-                    <input type="number" value={ratesAmount} onChange={e => setRatesAmount(Number(e.target.value))} />
-                  </div>
-                )}
-                <SbToggle
-                  label="Itemise Fees"
-                  sub="Break down individual costs"
-                  checked={useDetailedFees}
-                  onChange={setUseDetailedFees}
-                />
-                {useDetailedFees && (
-                  <div className="sb-fee-list">
-                    {[['Conveyancer', conveyancerFee, setConveyancerFee],
-                      ['Bank Fees', bankFee, setBankFee],
-                      ['Building Inspection', buildingInspection, setBuildingInspection],
-                      ['Pest Inspection', pestInspection, setPestInspection],
-                      ['Other', otherFees, setOtherFees]].map(([lbl, val, setter]) => (
-                      <div key={lbl} className="sb-fee-row">
-                        <span>{lbl}</span>
-                        <input type="number" value={val} onChange={e => setter(Number(e.target.value))} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <SbToggle
                   label="Override LMI"
                   sub="Enter exact LMI amount"
                   checked={overrideLMI}
