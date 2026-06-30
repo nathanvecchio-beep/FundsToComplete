@@ -629,48 +629,29 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                     <div className="fsc-col-head">Funds Available</div>
                   </div>
 
-                  {/* Home Loan — first */}
-                  <div className="fsc-row fsc-row-editable">
-                    <span>Home Loan</span>
-                    <span className="fsc-edit-amount">
-                      <span className="fsc-edit-dollar">$</span>
-                      <DollarInput
-                        className="fsc-edit-input"
-                        value={rawBaseLoan > 0 ? totalLoan : 0}
-                        onChange={v => handleLoanEdit(v)}
-                        placeholder="0"
-                      />
-                    </span>
+                  <div className="fsc-row">
+                    <span className="fsc-row-label">Home Loan</span>
+                    <div className="fsc-amt-wrap">
+                      <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={rawBaseLoan > 0 ? totalLoan : 0} onChange={v => handleLoanEdit(v)} placeholder="0" /></span>
+                      <div className="fsc-del-spacer" />
+                    </div>
                   </div>
 
-                  {/* Savings / Deposit */}
-                  <div className="fsc-row fsc-row-editable">
-                    <span>Savings / Deposit</span>
-                    <span className="fsc-edit-amount">
-                      <span className="fsc-edit-dollar">$</span>
-                      <DollarInput
-                        className="fsc-edit-input"
-                        value={depositDisplay}
-                        onChange={v => handleDepositChange(v)}
-                        placeholder="0"
-                      />
-                    </span>
+                  <div className="fsc-row">
+                    <span className="fsc-row-label">Savings / Deposit</span>
+                    <div className="fsc-amt-wrap">
+                      <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={depositDisplay} onChange={v => handleDepositChange(v)} placeholder="0" /></span>
+                      <div className="fsc-del-spacer" />
+                    </div>
                   </div>
 
-                  {/* User-added fund sources */}
                   {extraFunds.map(f => (
-                    <div key={f.id} className="fsc-row fsc-row-user">
-                      <input
-                        className="fsc-label-input fsc-label-input-bordered"
-                        value={f.label}
-                        placeholder="e.g. Shares, Gift, Sale proceeds…"
-                        onChange={e => updateExtraFund(f.id, 'label', e.target.value)}
-                      />
-                      <span className="fsc-edit-amount">
-                        <span className="fsc-edit-dollar">$</span>
-                        <DollarInput className="fsc-edit-input" value={f.amount} onChange={v => updateExtraFund(f.id, 'amount', v)} placeholder="0" />
+                    <div key={f.id} className="fsc-row">
+                      <input className="fsc-label-input fsc-label-input-bordered" value={f.label} placeholder="e.g. Shares, Gift, Sale proceeds…" onChange={e => updateExtraFund(f.id, 'label', e.target.value)} />
+                      <div className="fsc-amt-wrap">
+                        <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={f.amount} onChange={v => updateExtraFund(f.id, 'amount', v)} placeholder="0" /></span>
                         <button className="fsc-del-btn" onClick={() => removeExtraFund(f.id)}>✕</button>
-                      </span>
+                      </div>
                     </div>
                   ))}
 
@@ -687,32 +668,42 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                     <div className="fsc-col-head">Funds Required</div>
                   </div>
 
-                  {/* Purchase price */}
-                  <div className="fsc-row"><span>Purchase Price</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{pv > 0 ? pv.toLocaleString() : '—'}</span></span></div>
-                  <div className="fsc-row"><span>Stamp Duty</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(netStampDuty).toLocaleString()}</span></span></div>
-                  <div className="fsc-row"><span>Transfer &amp; Reg Fees</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(transferFee + mortgageReg).toLocaleString()}</span></span></div>
-                  <div className="fsc-row"><span>Legal &amp; Bank Fees</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(fees).toLocaleString()}</span></span></div>
-                  {lmiActive && !capLMI && <div className="fsc-row"><span>LMI (upfront)</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(lmi).toLocaleString()}</span></span></div>}
-                  {fhog > 0 && <div className="fsc-row fsc-row-credit"><span>FHOG Grant</span><span className="fsc-readonly-amount fsc-readonly-credit"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">−{Math.round(fhog).toLocaleString()}</span></span></div>}
+                  {[
+                    ['Purchase Price', pv > 0 ? pv.toLocaleString() : '—'],
+                    ['Stamp Duty', Math.round(netStampDuty).toLocaleString()],
+                    ['Transfer & Reg Fees', Math.round(transferFee + mortgageReg).toLocaleString()],
+                    ['Legal & Bank Fees', Math.round(fees).toLocaleString()],
+                    ...( lmiActive && !capLMI ? [['LMI (upfront)', Math.round(lmi).toLocaleString()]] : [] ),
+                  ].map(([label, val]) => (
+                    <div key={label} className="fsc-row">
+                      <span className="fsc-row-label">{label}</span>
+                      <div className="fsc-amt-wrap">
+                        <span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{val}</span></span>
+                        <div className="fsc-del-spacer" />
+                      </div>
+                    </div>
+                  ))}
+                  {fhog > 0 && (
+                    <div className="fsc-row">
+                      <span className="fsc-row-label">FHOG Grant</span>
+                      <div className="fsc-amt-wrap">
+                        <span className="fsc-readonly-amount fsc-readonly-credit"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">−{Math.round(fhog).toLocaleString()}</span></span>
+                        <div className="fsc-del-spacer" />
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Debts to Close */}
                   <div className="fsc-debts-divider">
                     <span className="fsc-debts-label">Debts to Close</span>
                   </div>
 
                   {debts.map(d => (
-                    <div key={d.id} className="fsc-row fsc-row-user">
-                      <input
-                        className="fsc-label-input fsc-label-input-bordered"
-                        value={d.label}
-                        placeholder="e.g. Credit card, Car loan…"
-                        onChange={e => updateDebt(d.id, 'label', e.target.value)}
-                      />
-                      <span className="fsc-edit-amount">
-                        <span className="fsc-edit-dollar">$</span>
-                        <DollarInput className="fsc-edit-input" value={d.amount} onChange={v => updateDebt(d.id, 'amount', v)} placeholder="0" />
+                    <div key={d.id} className="fsc-row">
+                      <input className="fsc-label-input fsc-label-input-bordered" value={d.label} placeholder="e.g. Credit card, Car loan…" onChange={e => updateDebt(d.id, 'label', e.target.value)} />
+                      <div className="fsc-amt-wrap">
+                        <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={d.amount} onChange={v => updateDebt(d.id, 'amount', v)} placeholder="0" /></span>
                         <button className="fsc-del-btn" onClick={() => removeDebt(d.id)}>✕</button>
-                      </span>
+                      </div>
                     </div>
                   ))}
 
