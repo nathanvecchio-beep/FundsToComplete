@@ -699,7 +699,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   {[
                     ['Lender Setup Fees', lenderSetupFees, setLenderSetupFees],
                     ['Client Legal Fees', clientLegalFees, setClientLegalFees],
-                    ['Mortgage Discharge Fees', mortgageDischargeFees, setMortgageDischargeFees],
+                    ['Discharge Fees', mortgageDischargeFees, setMortgageDischargeFees],
                     ['Other / Sundries', otherSundries, setOtherSundries],
                   ].map(([lbl, val, setter]) => (
                     <div key={lbl} className="fsc-row">
