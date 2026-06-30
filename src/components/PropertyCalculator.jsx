@@ -240,9 +240,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [lenderSetupFees, setLenderSetupFees] = useState(0);
   const [clientLegalFees, setClientLegalFees] = useState(0);
   const [mortgageDischargeFees, setMortgageDischargeFees] = useState(0);
-  const [otherDischargeFees, setOtherDischargeFees] = useState(0);
   const [otherSundries, setOtherSundries] = useState(0);
-  const sundryTotal = lenderSetupFees + clientLegalFees + mortgageDischargeFees + otherDischargeFees + otherSundries;
+  const sundryTotal = lenderSetupFees + clientLegalFees + mortgageDischargeFees + otherSundries;
 
   // ── Debts to close ────────────────────────────────────────────────────────
   const [debts, setDebts] = useState([]);
@@ -701,7 +700,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                     ['Lender Setup Fees', lenderSetupFees, setLenderSetupFees],
                     ['Client Legal Fees', clientLegalFees, setClientLegalFees],
                     ['Mortgage Discharge Fees', mortgageDischargeFees, setMortgageDischargeFees],
-                    ['Other Discharge Fees', otherDischargeFees, setOtherDischargeFees],
                     ['Other / Sundries', otherSundries, setOtherSundries],
                   ].map(([lbl, val, setter]) => (
                     <div key={lbl} className="fsc-row">
