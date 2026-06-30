@@ -305,7 +305,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
       rawBaseLoan = Math.round(pv * baseLvr / 100);
     }
 
-    const mortgageReg = calculateMortgageRegistration(stateCode, rawBaseLoan);
+    const mortgageReg = calculateMortgageRegistration(stateCode, rawBaseLoan || pv);
     const totalGovt = govtChargesOn ? (netStampDuty + transferFee + mortgageReg) : 0;
 
     const lmiResult = calculateLMI(rawBaseLoan, pv, lmiWaived, stateCode);
