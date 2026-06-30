@@ -196,22 +196,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   // so the loan stays clean (80% of PV) and costs are separate.
   const [depositDisplay, setDepositDisplay] = useState(0);
 
-  // When PV first becomes > 0, set deposit display to 20% and lock LVR at 80%
   const pvInitialized = useRef(false);
-  useEffect(() => {
-    const pv = Number(propertyValue) || 0;
-    if (pv > 0 && !pvInitialized.current) {
-      pvInitialized.current = true;
-      const d = Math.round(pv * 0.2);
-      setDepositDisplay(d);
-      setBaseLvrManual(80);
-      setBaseLvrOverride(true);
-    } else if (pv > 0 && pvInitialized.current && baseLvrOverride) {
-      // PV changed — recalculate deposit display from existing LVR
-      const lvr = Number(baseLvrManual);
-      setDepositDisplay(Math.round(pv * (1 - lvr / 100)));
-    }
-  }, [propertyValue]);
 
 
   // ── LMI options ──────────────────────────────────────────────────────────
@@ -400,7 +385,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
       state, firstHome, foreignBuyer, baseLvrManual]);
 
   const handlePvEdit = (v) => {
-    pvInitialized.current = false;
     setPropertyValue(v);
   };
 
@@ -644,7 +628,25 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               </div>
             </div>
             <div className="hero-stat-cards">
-              {/* Stamp duty card */}
+              <EditableStatCard
+                label={lmiActive && capLMI ? 'TOTAL LOAN (INCL. LMI)' : 'HOME LOAN'}
+                displayValue={pv > 0 && rawBaseLoan > 0 ? fmt(totalLoan) : '$—'}
+                editValue={rawBaseLoan}
+                editable={pv > 0}
+                onEdit={handleLoanEdit}
+                inputPrefix="$"
+                sub={lmiActive && capLMI ? `Base ${fmt(rawBaseLoan)} + LMI ${fmt(lmi)}` : null}
+              />
+              <EditableStatCard
+                label="LVR"
+                displayValue={pv > 0 && rawBaseLoan > 0 ? fmtPct(totalLvr, 1) : '—'}
+                editValue={Number(baseLvr.toFixed(1))}
+                editable={pv > 0}
+                onEdit={handleLvrEdit}
+                inputSuffix="%"
+                valueClass={lmiActive ? 'hsc-lmi' : ''}
+                sub={pv > 0 && rawBaseLoan > 0 ? (lmiActive ? '⚠ LMI applies' : '✓ No LMI') : null}
+              />
               <div className="hero-stat-card">
                 <div className="hsc-label">STAMP DUTY</div>
                 <div className="hsc-value">{pv > 0 ? fmt(netStampDuty) : '$—'}</div>
