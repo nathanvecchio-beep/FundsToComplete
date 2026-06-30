@@ -709,12 +709,12 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   <div className="fsc-col-head-row">
                     <div className="fsc-col-head">Funds Required</div>
                   </div>
-                  <div className="fsc-row"><span>Deposit{pv > 0 ? ` (${(depositDisplay / pv * 100).toFixed(0)}%)` : ''}</span><span>{fmt(depositDisplay)}</span></div>
-                  <div className="fsc-row"><span>Stamp Duty</span><span>{fmt(netStampDuty)}</span></div>
-                  <div className="fsc-row"><span>Transfer &amp; Reg Fees</span><span>{fmt(transferFee + mortgageReg)}</span></div>
-                  <div className="fsc-row"><span>Legal &amp; Bank Fees</span><span>{fmt(fees)}</span></div>
-                  {lmiActive && !capLMI && <div className="fsc-row fsc-row-lmi"><span>LMI (upfront)</span><span>{fmt(lmi)}</span></div>}
-                  {fhog > 0 && <div className="fsc-row fsc-row-credit"><span>FHOG Grant</span><span>−{fmt(fhog)}</span></div>}
+                  <div className="fsc-row"><span>Deposit{pv > 0 ? ` (${(depositDisplay / pv * 100).toFixed(0)}%)` : ''}</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(depositDisplay).toLocaleString()}</span></span></div>
+                  <div className="fsc-row"><span>Stamp Duty</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(netStampDuty).toLocaleString()}</span></span></div>
+                  <div className="fsc-row"><span>Transfer &amp; Reg Fees</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(transferFee + mortgageReg).toLocaleString()}</span></span></div>
+                  <div className="fsc-row"><span>Legal &amp; Bank Fees</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(fees).toLocaleString()}</span></span></div>
+                  {lmiActive && !capLMI && <div className="fsc-row fsc-row-lmi"><span>LMI (upfront)</span><span className="fsc-readonly-amount"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">{Math.round(lmi).toLocaleString()}</span></span></div>}
+                  {fhog > 0 && <div className="fsc-row fsc-row-credit"><span>FHOG Grant</span><span className="fsc-readonly-amount fsc-readonly-credit"><span className="fsc-readonly-dollar">$</span><span className="fsc-readonly-value">−{Math.round(fhog).toLocaleString()}</span></span></div>}
 
                   {/* Debts to Close */}
                   <div className="fsc-debts-divider">

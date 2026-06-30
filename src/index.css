@@ -775,6 +775,37 @@ body {
 .fsc-draft-label::placeholder { color: #bbb; }
 .fsc-draft-label:focus { background: rgba(0,0,0,0.03); border-radius: 3px; padding-left: 2px; }
 .fsc-draft-amount .fsc-edit-input::placeholder { color: #ddd; font-weight: 400; }
+/* Read-only auto-calculated amounts */
+.fsc-readonly-amount {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid rgba(0,0,0,0.13);
+  border-radius: 7px;
+  overflow: hidden;
+  background: #e8e8e8;
+  flex-shrink: 0;
+  cursor: default;
+}
+.fsc-readonly-dollar {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #777;
+  background: #d4d4d4;
+  border-right: 1.5px solid rgba(0,0,0,0.1);
+  padding: 4px 7px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.fsc-readonly-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  padding: 4px 7px;
+  text-align: right;
+  min-width: 88px;
+}
+.fsc-readonly-credit .fsc-readonly-value { color: #16a34a; }
 /* Debts divider */
 .fsc-debts-divider {
   display: flex;
