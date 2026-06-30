@@ -644,27 +644,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               </div>
             </div>
             <div className="hero-stat-cards">
-              {/* #2 Editable loan card; #4 disambiguated label when LMI capitalised */}
-              <EditableStatCard
-                label={lmiActive && capLMI ? 'TOTAL LOAN (INCL. LMI)' : 'HOME LOAN'}
-                displayValue={fmt(totalLoan)}
-                editValue={rawBaseLoan}
-                editable={pv > 0}
-                onEdit={handleLoanEdit}
-                inputPrefix="$"
-                sub={lmiActive && capLMI ? `Base ${fmt(rawBaseLoan)} + LMI ${fmt(lmi)}` : null}
-              />
-              {/* #2 Editable LVR card */}
-              <EditableStatCard
-                label="LVR"
-                displayValue={fmtPct(totalLvr, 1)}
-                editValue={Number(baseLvr.toFixed(1))}
-                editable={pv > 0}
-                onEdit={handleLvrEdit}
-                inputSuffix="%"
-                valueClass={lmiActive ? 'hsc-lmi' : ''}
-                sub={lmiActive ? '⚠ LMI applies' : (pv > 0 ? '✓ No LMI' : null)}
-              />
               {/* Stamp duty card */}
               <div className="hero-stat-card">
                 <div className="hsc-label">STAMP DUTY</div>
@@ -675,8 +654,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
           </div>
 
           {/* FUNDING SUMMARY TABLE */}
-          {pv > 0 && (
-            <div className="funding-summary-card">
+          <div className="funding-summary-card">
               <div className="fsc-table">
 
                 {/* LEFT — Funds Available */}
@@ -741,7 +719,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   <div className="fsc-col-head-row">
                     <div className="fsc-col-head">Funds Required</div>
                   </div>
-                  <div className="fsc-row"><span>Deposit ({(depositDisplay / pv * 100).toFixed(0)}%)</span><span>{fmt(depositDisplay)}</span></div>
+                  <div className="fsc-row"><span>Deposit{pv > 0 ? ` (${(depositDisplay / pv * 100).toFixed(0)}%)` : ''}</span><span>{fmt(depositDisplay)}</span></div>
                   <div className="fsc-row"><span>Stamp Duty</span><span>{fmt(netStampDuty)}</span></div>
                   <div className="fsc-row"><span>Transfer &amp; Reg Fees</span><span>{fmt(transferFee + mortgageReg)}</span></div>
                   <div className="fsc-row"><span>Legal &amp; Bank Fees</span><span>{fmt(fees)}</span></div>
@@ -793,7 +771,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               </div>
 
               {/* Summary Position */}
-              <div className={`fsc-position ${hasSurplus ? 'fsc-surplus' : 'fsc-deficit'}`}>
+              {pv > 0 && <div className={`fsc-position ${hasSurplus ? 'fsc-surplus' : 'fsc-deficit'}`}>
                 <div>
                   <div className="fsc-position-label">{hasSurplus ? '✓ Summary Position — Surplus' : '⚠ Summary Position — Shortfall'}</div>
                   <div className="fsc-position-sub">
@@ -803,9 +781,8 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   </div>
                 </div>
                 <div className="fsc-position-amount">{(extraFundsTotal > 0 || debtsTotal > 0) ? fmt(Math.abs(summaryPosition)) : '—'}</div>
-              </div>
+              </div>}
             </div>
-          )}
 
           {/* BOTTOM EQUATION BAR */}
           <div className="equation-bar">
