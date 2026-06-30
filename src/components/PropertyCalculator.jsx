@@ -272,7 +272,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const C = useMemo(() => {
     const pv = Number(propertyValue) || 0;
 
-    const baseLvr = baseLvrOverride ? Number(baseLvrManual) : 80;
+    const baseLvr = baseLvrOverride ? Number(baseLvrManual) : 0;
 
     const fees = useDetailedFees
       ? (Number(conveyancerFee) + Number(bankFee) + Number(buildingInspection) + Number(pestInspection) + Number(otherFees))
