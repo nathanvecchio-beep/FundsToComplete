@@ -683,17 +683,25 @@ body {
 .fsc-total span:last-child { color: var(--gold); }
 .fsc-position {
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .fsc-surplus { background: #dcfce7; border: 1.5px solid #86efac; }
 .fsc-deficit { background: #fee2e2; border: 1.5px solid #fca5a5; }
+.fsc-position-left { display: flex; align-items: center; gap: 10px; }
+.fsc-position-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  font-size: 0.72rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.fsc-surplus .fsc-position-icon { background: #16a34a; color: white; }
+.fsc-deficit .fsc-position-icon { background: #dc2626; color: white; }
 .fsc-position-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 .fsc-surplus .fsc-position-label { color: #15803d; }
 .fsc-deficit .fsc-position-label { color: #dc2626; }
@@ -868,9 +876,22 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 0 4px;
-  margin-top: 6px;
-  border-top: 1.5px dashed rgba(0,0,0,0.1);
+  padding: 10px 0 6px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+}
+.fsc-debts-divider-bar {
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.fsc-debts-label {
+  font-size: 0.59rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #bbb;
 }
 
 /* Sidebar toggle items */

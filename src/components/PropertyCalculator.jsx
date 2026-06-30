@@ -659,6 +659,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   )}
 
                   <div className="fsc-debts-divider">
+                    <div className="fsc-debts-divider-bar" style={{ background: '#d0ccc6' }} />
                     <span className="fsc-debts-label">Sundry Fees</span>
                   </div>
 
@@ -671,13 +672,14 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                     <div key={lbl} className="fsc-row">
                       <span className="fsc-row-label">{lbl}</span>
                       <div className="fsc-amt-wrap">
-                        <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={val} onChange={setter} placeholder="0" /></span>
+                        <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={val} onChange={setter} placeholder="—" /></span>
                         <div className="fsc-del-spacer" />
                       </div>
                     </div>
                   ))}
 
                   <div className="fsc-debts-divider">
+                    <div className="fsc-debts-divider-bar" style={{ background: '#fca5a5' }} />
                     <span className="fsc-debts-label">Debts to Close</span>
                   </div>
 
@@ -702,12 +704,15 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               {/* Summary Position */}
               {pv > 0 && (
                 <div className={`fsc-position ${hasSurplus ? 'fsc-surplus' : 'fsc-deficit'}`}>
-                  <div>
-                    <div className="fsc-position-label">{hasSurplus ? '✓ Summary Position — Surplus' : '⚠ Summary Position — Shortfall'}</div>
-                    <div className="fsc-position-sub">
-                      {hasSurplus
-                        ? "Available funds exceed all purchase costs and debts to close"
-                        : `Shortfall of ${fmt(Math.abs(summaryPosition))} — consider increasing loan or additional funds`}
+                  <div className="fsc-position-left">
+                    <div className="fsc-position-icon">{hasSurplus ? '✓' : '!'}</div>
+                    <div>
+                      <div className="fsc-position-label">{hasSurplus ? 'Surplus' : 'Shortfall'}</div>
+                      <div className="fsc-position-sub">
+                        {hasSurplus
+                          ? "Available funds exceed all purchase costs and debts to close"
+                          : `Shortfall of ${fmt(Math.abs(summaryPosition))} — consider increasing loan or additional funds`}
+                      </div>
                     </div>
                   </div>
                   <div className="fsc-position-amount">{fmt(Math.abs(summaryPosition))}</div>
