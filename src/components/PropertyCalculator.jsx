@@ -500,12 +500,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
                 {/* Costs & Fees */}
                 <div className="sb-adv-section-label">Costs &amp; Fees</div>
-                <SbToggle
-                  label="Include Govt Charges"
-                  sub="Stamp duty, transfer &amp; reg"
-                  checked={govtChargesOn}
-                  onChange={setGovtChargesOn}
-                />
                 {firstHome && (
                   <SbToggle
                     label={`FHOG Grant ($${(FHOG_AMOUNTS[stateCode] || 0).toLocaleString()})`}
