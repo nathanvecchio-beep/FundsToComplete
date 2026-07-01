@@ -599,7 +599,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   <div className="fsc-row">
                     <span className="fsc-row-label">Home Loan</span>
                     <div className="fsc-amt-wrap">
-                      <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={rawBaseLoan > 0 ? totalLoan : 0} onChange={v => handleLoanEdit(v)} placeholder="0" /></span>
+                      <span className="fsc-edit-amount"><span className="fsc-edit-dollar">$</span><DollarInput className="fsc-edit-input" value={rawBaseLoan} onChange={v => handleLoanEdit(v)} placeholder="0" /></span>
                       <div className="fsc-del-spacer" />
                     </div>
                   </div>
