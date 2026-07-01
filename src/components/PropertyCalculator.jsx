@@ -172,7 +172,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [foreignBuyer, setForeignBuyer] = useState(initialValues?.foreignBuyer || false);
 
   // ── LMI waivers ─────────────────────────────────────────────────────────
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [fhgScheme, setFhgScheme] = useState(false);
   const [profLmi, setProfLmi] = useState(false);
   const [famGuarantor, setFamGuarantor] = useState(false);
@@ -467,12 +466,9 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
           {/* Advanced Options */}
           <div className="sb-section">
-            <button className="sb-advanced-link" onClick={() => setAdvancedOpen(v => !v)}>
-              {advancedOpen ? '− Advanced options' : '+ Advanced options'} · LMI, fees
-            </button>
+            <div className="sb-adv-section-label" style={{ marginTop: 0 }}>Advanced options · LMI, fees</div>
 
-            {advancedOpen && (
-              <div className="sb-advanced-body">
+            <div className="sb-advanced-body">
                 {/* LMI Waivers */}
                 <div className="sb-adv-section-label">LMI Waivers</div>
                 <SbToggle
@@ -527,8 +523,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                     <input type="number" value={lmiManualAmt} onChange={e => setLmiManualAmt(Number(e.target.value))} />
                   </div>
                 )}
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
