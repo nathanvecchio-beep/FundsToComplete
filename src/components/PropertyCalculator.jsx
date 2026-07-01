@@ -570,13 +570,13 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
               />
               <EditableStatCard
                 label="LVR"
-                displayValue={pv > 0 && rawBaseLoan > 0 ? fmtPct(totalLvr, 1) : '—'}
+                displayValue={pv > 0 && rawBaseLoan > 0 ? fmtPct(baseLvrCalc, 1) : '—'}
                 editValue={Number(baseLvr.toFixed(1))}
                 editable={pv > 0}
                 onEdit={handleLvrEdit}
                 inputSuffix="%"
                 valueClass={lmiActive ? 'hsc-lmi' : ''}
-                sub={pv > 0 && rawBaseLoan > 0 ? (lmiActive ? '⚠ LMI applies' : '✓ No LMI') : null}
+                sub={pv > 0 && rawBaseLoan > 0 ? (lmiActive && capLMI ? `${fmtPct(totalLvr, 2)} with LMI` : (lmiActive ? '⚠ LMI applies' : '✓ No LMI')) : null}
               />
               <div className="hero-stat-card">
                 <div className="hsc-label">STAMP DUTY</div>
