@@ -466,8 +466,6 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
 
           {/* Advanced Options */}
           <div className="sb-section">
-            <div className="sb-adv-section-label" style={{ marginTop: 0 }}>Advanced options · LMI, fees</div>
-
             <div className="sb-advanced-body">
                 {/* LMI Waivers */}
                 <div className="sb-adv-section-label">LMI Waivers</div>
