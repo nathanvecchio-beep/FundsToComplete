@@ -894,6 +894,82 @@ body {
   color: #bbb;
 }
 
+/* ── LMI block in Funds Available ── */
+.fsc-lmi-block {
+  margin: 8px 0 4px;
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  overflow: hidden;
+}
+.fsc-lmi-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: #ffedd5;
+  border-bottom: 1px solid #fed7aa;
+}
+.fsc-lmi-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.65rem; font-weight: 800; color: #c2410c;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.fsc-lmi-icon {
+  width: 17px; height: 17px; border-radius: 50%;
+  background: #ea580c; color: white;
+  font-size: 0.6rem; font-weight: 800; font-style: normal;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fsc-lmi-header-amt { font-size: 0.9rem; font-weight: 900; color: #9a3412; }
+.fsc-lmi-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.fsc-lmi-lender-row { display: flex; align-items: center; gap: 8px; }
+.fsc-lmi-lender-label { font-size: 0.65rem; font-weight: 600; color: #aaa; white-space: nowrap; }
+.fsc-lmi-lender-select {
+  flex: 1; border: 1.5px solid rgba(0,0,0,0.13); border-radius: 7px;
+  padding: 5px 28px 5px 9px; font-size: 0.72rem; font-weight: 500; color: #1a1a1a;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 9px center;
+  appearance: none; outline: none; cursor: pointer;
+}
+.fsc-lmi-lender-select:focus { border-color: #F5A41F; box-shadow: 0 0 0 2px rgba(245,164,31,0.12); }
+.fsc-lmi-cap-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.fsc-lmi-cap-label { font-size: 0.72rem; font-weight: 600; color: #555; display: block; }
+.fsc-lmi-cap-sub { font-size: 0.62rem; color: #aaa; margin-top: 1px; display: block; }
+.fsc-lmi-scenarios { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.fsc-lmi-scenario {
+  border-radius: 8px; padding: 8px 10px;
+  border: 1.5px solid rgba(0,0,0,0.08);
+}
+.fsc-lmi-scenario-active { border-color: #F5A41F; background: #fff8ec; }
+.fsc-lmi-scenario-inactive { background: #f5f5f5; }
+.fsc-lmi-scenario-tag {
+  font-size: 0.55rem; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; margin-bottom: 3px;
+}
+.fsc-lmi-scenario-active .fsc-lmi-scenario-tag { color: #d97706; }
+.fsc-lmi-scenario-inactive .fsc-lmi-scenario-tag { color: #bbb; }
+.fsc-lmi-scenario-name { font-size: 0.65rem; font-weight: 700; color: #555; margin-bottom: 5px; }
+.fsc-lmi-scenario-inactive .fsc-lmi-scenario-name { color: #bbb; }
+.fsc-lmi-scenario-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.62rem; color: #888; padding: 1px 0;
+}
+.fsc-lmi-scenario-row span:last-child { font-weight: 600; color: #555; }
+.fsc-lmi-scenario-inactive .fsc-lmi-scenario-row span:last-child { color: #bbb; }
+.fsc-lmi-scenario-total {
+  display: flex; justify-content: space-between;
+  font-size: 0.68rem; font-weight: 800;
+  padding-top: 5px; margin-top: 4px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.fsc-lmi-scenario-active .fsc-lmi-scenario-total { color: #d97706; }
+.fsc-lmi-scenario-inactive .fsc-lmi-scenario-total { color: #bbb; }
+.fsc-lmi-disclaimer {
+  font-size: 0.6rem; color: #aaa; font-style: italic;
+  padding-top: 2px;
+}
+
 /* Sidebar toggle items */
 .sb-toggle-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
 .sb-toggle-item:last-child { border-bottom: none; }

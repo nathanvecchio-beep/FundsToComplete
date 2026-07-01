@@ -385,72 +385,162 @@ export function calculateMortgageRegistration(stateCode, loanAmount) {
   }
 }
 
-// ── LMI Estimator (real industry rate table) ─────────────────────────────────
-// Source: Home Loan Experts published rate table ("one of our lenders" — bank
-// identity withheld at the bank's request), updated 18 May 2026.
-// Rows = LVR bands (upper bound %, 1% wide starting at 80.01%)
-// Cols = Loan size bands (upper bound $)
-//
-// IMPORTANT DISCLAIMER: LMI premiums are NOT publicly published on a per-bank
-// basis. This uses an industry-representative table. No bank publicly discloses
-// its exact rate — get a real quote from the lender at application time.
+// ── LMI Rate Tables — per lender ─────────────────────────────────────────────
+// Sources: Westpac OBP Credit Policy (21/08/2022), Helia LMI Premium Calculator
+// workbook (Standard product), CBA worked examples (21/09/2024).
+// All figures are indicative only — confirm live figures with the lender.
 
-const LVR_BANDS  = [81,82,83,84,85,86,87,88,89,90,91,92,93,94,95];
-const LOAN_BANDS = [300000, 500000, 600000, 750000, 1000000];
+// Stamp duty on LMI premium by state
+const LMI_STAMP_DUTY = { NSW: 0.00, VIC: 0.10, QLD: 0.096585365854, SA: 0.11, WA: 0.10, TAS: 0.10, ACT: 0.00, NT: 0.10 };
 
-const LMI_RATE_TABLE = [
-  [0.00475, 0.00568, 0.00904, 0.00904, 0.00913], // 80.01–81%
-  [0.00485, 0.00568, 0.00904, 0.00904, 0.00913], // 81.01–82%
-  [0.00596, 0.00699, 0.00932, 0.01090, 0.01109], // 82.01–83%
-  [0.00662, 0.00829, 0.00960, 0.01090, 0.01146], // 83.01–84%
-  [0.00727, 0.00969, 0.01165, 0.01333, 0.01407], // 84.01–85%
-  [0.00876, 0.01081, 0.01258, 0.01407, 0.01463], // 85.01–86%
-  [0.00932, 0.01146, 0.01407, 0.01631, 0.01733], // 86.01–87%
-  [0.01062, 0.01305, 0.01463, 0.01631, 0.01752], // 87.01–88%
-  [0.01295, 0.01621, 0.01948, 0.02218, 0.02395], // 88.01–89%
-  [0.01463, 0.01873, 0.02180, 0.02367, 0.02516], // 89.01–90%
-  [0.02013, 0.02618, 0.03513, 0.03783, 0.03820], // 90.01–91%
-  [0.02013, 0.02674, 0.03569, 0.03867, 0.03932], // 91.01–92%
-  [0.02330, 0.03028, 0.03802, 0.04081, 0.04156], // 92.01–93%
-  [0.02376, 0.03028, 0.03802, 0.04286, 0.04324], // 93.01–94%
-  [0.02609, 0.03345, 0.03998, 0.04613, 0.04603], // 94.01–95%
+function _lvrBand(lvr, bounds) {
+  for (let i = 0; i < bounds.length; i++) { if (lvr <= bounds[i]) return i; }
+  return bounds.length - 1;
+}
+function _loanBand(loan, bounds) {
+  for (let i = 0; i < bounds.length; i++) { if (loan <= bounds[i]) return i; }
+  return bounds.length - 1;
+}
+function _gridRate(loan, lvr, lvrBounds, loanBounds, grid) {
+  return grid[_lvrBand(lvr, lvrBounds)][_loanBand(loan, loanBounds)];
+}
+function _applyStamp(premium, stateCode) {
+  const dutyOnPremium = Math.round(premium * (LMI_STAMP_DUTY[stateCode] ?? 0) * 100) / 100;
+  return { dutyOnPremium, total: Math.round(premium + dutyOnPremium) };
+}
+
+// ── Westpac (ALMI/WLMI) ──────────────────────────────────────────────────────
+const WBC_LVR = [75,76,78,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95];
+const WBC_LOAN = [300000,500000,750000,1000000,1500000,2000000,2500000,Infinity];
+const WBC_RATES = [
+  [0.27,0.39,0.49,0.49,0.58,0.66,0.75,0.75],
+  [0.34,0.41,0.59,0.60,0.65,0.68,0.72,0.72],
+  [0.34,0.45,0.59,0.68,0.68,0.69,0.72,0.72],
+  [0.46,0.54,0.75,0.80,0.90,0.91,0.92,0.92],
+  [0.60,0.60,0.74,0.74,0.93,0.93,0.93,0.93],
+  [0.61,0.61,0.74,0.74,0.93,0.93,0.93,0.93],
+  [0.80,0.85,0.97,0.97,1.24,1.24,1.24,1.24],
+  [0.80,0.88,1.02,1.02,1.30,1.30,1.30,1.30],
+  [0.81,1.08,1.18,1.18,1.52,1.52,1.52,1.52],
+  [0.84,1.11,1.26,1.26,1.58,1.58,1.58,1.58],
+  [1.18,1.22,1.45,1.45,1.81,1.81,1.81,1.81],
+  [1.20,1.28,1.58,1.58,1.86,1.91,1.97,1.97],
+  [1.24,1.60,2.00,2.00,2.34,2.34,2.34,2.34],
+  [1.68,1.80,2.41,2.41,2.66,2.68,2.80,2.80],
+  [1.94,2.38,3.38,3.38,3.52,3.84,4.06,4.06],
+  [1.94,2.55,3.51,3.52,3.65,4.03,4.06,4.06],
+  [2.28,2.74,3.66,3.66,3.91,4.16,4.33,4.33],
+  [2.32,2.76,3.81,3.82,3.98,4.23,4.43,4.43],
+  [2.55,3.12,4.00,4.03,4.17,4.55,4.78,4.78],
 ];
 
-// Stamp duty on the LMI premium — legislated per state, verified 26 June 2026
-const LMI_STAMP_DUTY = { NSW: 0.00, VIC: 0.10, QLD: 0.09, SA: 0.11, WA: 0.10, TAS: 0.10, ACT: 0.00, NT: 0.10 };
+// ── St George / BankSA / Bank of Melbourne (Westpac Group) ───────────────────
+const SGB_LOAN = [300000,500000,1000000,Infinity];
+const SGB_RATES = [
+  [0.27,0.39,0.49,0.58],[0.27,0.39,0.49,0.58],[0.46,0.54,0.75,0.90],[0.46,0.54,0.75,0.90],
+  [0.60,0.60,0.74,0.93],[0.61,0.61,0.74,0.93],[0.80,0.85,0.97,1.24],[0.80,0.88,1.02,1.30],
+  [0.81,1.08,1.18,1.52],[0.84,1.11,1.26,1.58],[1.18,1.22,1.45,1.81],[1.20,1.28,1.58,1.86],
+  [1.24,1.60,2.00,2.34],[1.68,1.80,2.41,2.66],[1.94,2.38,3.38,3.52],[1.94,2.55,3.51,3.65],
+  [2.28,2.74,3.66,3.91],[2.32,2.76,3.81,3.98],[2.55,3.12,4.00,4.17],
+];
 
-function lvrBandIdx(lvrPct) {
-  if (lvrPct <= 80) return -1;
-  for (let i = 0; i < LVR_BANDS.length; i++) {
-    if (lvrPct <= LVR_BANDS[i]) return i;
-  }
-  return LVR_BANDS.length - 1;
-}
-function loanBandIdx(loan) {
-  for (let j = 0; j < LOAN_BANDS.length; j++) {
-    if (loan <= LOAN_BANDS[j]) return j;
-  }
-  return LOAN_BANDS.length - 1;
-}
+// ── Helia "Standard" — used by ANZ, NAB, Macquarie, ING, Suncorp & others ────
+const HELIA_LVR = [60,65,70,75,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95];
+const HELIA_LOAN = [300000,500000,600000,750000,1000000,1500000,2000000,2500000,3000000,5000000,Infinity];
+const HELIA_RATES = [
+  [0.33,0.35,0.37,0.37,0.37,0.42,0.42,0.42,0.42,0.42,0.42],
+  [0.35,0.38,0.48,0.48,0.48,0.53,0.53,0.53,0.53,0.53,0.53],
+  [0.37,0.40,0.55,0.55,0.55,0.61,0.61,0.61,0.61,0.61,0.61],
+  [0.38,0.44,0.74,0.74,0.74,0.81,0.81,0.81,0.81,0.81,0.81],
+  [0.42,0.48,0.80,0.80,0.80,0.88,0.88,0.88,0.88,0.88,0.88],
+  [0.47,0.55,0.87,0.87,0.87,0.96,0.96,0.96,0.96,0.96,0.96],
+  [0.48,0.55,0.87,0.87,0.87,0.96,0.96,0.96,0.96,0.96,0.96],
+  [0.67,0.83,1.02,1.02,1.02,1.12,1.12,1.12,1.12,1.12,1.12],
+  [0.67,0.83,1.09,1.09,1.09,1.20,1.20,1.20,1.20,1.20,1.20],
+  [0.85,1.10,1.25,1.25,1.25,1.38,1.38,1.38,1.38,1.38,1.38],
+  [0.87,1.10,1.37,1.37,1.37,1.50,1.50,1.50,1.50,1.50,1.50],
+  [1.03,1.25,1.52,1.52,1.52,1.67,1.67,1.67,1.67,1.67,1.67],
+  [1.03,1.25,1.60,1.60,1.60,1.77,1.77,1.77,1.77,1.77,1.77],
+  [1.34,1.75,2.05,2.05,2.05,2.25,2.25,2.25,2.25,2.25,2.25],
+  [1.50,1.91,2.43,2.43,2.43,2.67,2.67,2.67,2.67,2.67,2.67],
+  [1.93,2.48,3.35,3.35,3.35,3.69,3.69,3.69,3.69,3.69,3.69],
+  [1.93,2.48,3.49,3.49,3.49,3.83,3.83,3.83,3.83,3.83,3.83],
+  [2.22,2.81,3.62,3.62,3.62,3.98,3.98,3.98,3.98,3.98,3.98],
+  [2.22,2.81,3.96,3.96,3.96,4.36,4.36,4.36,4.36,4.36,4.36],
+  [2.47,3.10,4.16,4.16,4.16,4.57,4.57,4.57,4.57,4.57,4.57],
+];
+const HELIA_MIN_PREMIUM = 1200;
+const HELIA_INVESTMENT_LOADER = 1.15;
 
-export function calculateLMI(loanAmount, propertyValue, lmiWaived, stateCode = 'NSW') {
-  if (lmiWaived || !loanAmount || !propertyValue) return { lmi: 0, basePremium: 0, dutyOnPremium: 0, rate: 0, warnings: [] };
+// ── CBA (modelled curve fitted to CBA's published worked examples) ────────────
+const CBA_CURVE = [
+  [60,0.35],[70,0.55],[75,0.65],[80,0.80],[82,0.95],
+  [84,1.15],[84.80,1.2469],[86,1.29],[87.50,1.3136],
+  [88,1.45],[89,1.75],[90,2.05],[90.62,2.3225],
+  [91,2.55],[92,2.95],[93,3.35],[94,3.80],[95,4.30],
+];
+function _cbaBaseRate(lvr) {
+  if (lvr <= CBA_CURVE[0][0]) return CBA_CURVE[0][1];
+  for (let i = 0; i < CBA_CURVE.length - 1; i++) {
+    const [x0,y0] = CBA_CURVE[i], [x1,y1] = CBA_CURVE[i+1];
+    if (lvr >= x0 && lvr <= x1) return y0 + (lvr - x0) / (x1 - x0) * (y1 - y0);
+  }
+  return CBA_CURVE[CBA_CURVE.length - 1][1];
+}
+function _cbaLoanMultiplier(loan) {
+  if (loan <= 300000) return 0.71;
+  if (loan <= 750000) return 1.0;
+  if (loan <= 1500000) return 1.2;
+  return 1.3;
+}
+const CBA_MIN_PREMIUM_LOW = 1118;
+const CBA_MIN_PREMIUM_HIGH = 1397;
+const CBA_INVESTMENT_LOADING = 1.15;
+
+// Lender definitions — id, display label, verified flag
+export const LMI_LENDERS = [
+  { id: 'westpac',  label: 'Westpac',                          verified: true  },
+  { id: 'sgb',      label: 'St George / BankSA / Bank of Melb', verified: true  },
+  { id: 'helia',    label: 'ANZ / NAB / Macquarie / ING (Helia)', verified: true  },
+  { id: 'cba',      label: 'CBA (modelled)',                    verified: false },
+];
+
+export function calculateLMI(loanAmount, propertyValue, lmiWaived, stateCode = 'NSW', lenderId = 'helia', isInvestment = false) {
+  const zero = { lmi: 0, basePremium: 0, dutyOnPremium: 0, rate: 0, warnings: [], lvrPct: 0 };
+  if (lmiWaived || !loanAmount || !propertyValue) return zero;
+
   const lvrPct = (loanAmount / propertyValue) * 100;
-  if (lvrPct <= 80) return { lmi: 0, basePremium: 0, dutyOnPremium: 0, rate: 0, warnings: [] };
+  if (lvrPct <= 80) return zero;
 
   const warnings = [];
-  if (lvrPct > 95) warnings.push('LVR exceeds 95% — most lenders will not lend above this. Estimate uses the 94–95% band.');
-  if (loanAmount > 1000000) warnings.push('Loan exceeds $1M — rate table tops out at the $750k–$1M band. Actual premium may be higher.');
+  if (lvrPct > 95) warnings.push('LVR exceeds 95% — most lenders will not lend above this.');
 
-  const i = lvrBandIdx(lvrPct);
-  const j = loanBandIdx(loanAmount);
-  const rate = LMI_RATE_TABLE[i][j];
-  const basePremium = Math.round(loanAmount * rate * 100) / 100;
-  const dutyRate = LMI_STAMP_DUTY[stateCode] ?? 0;
-  const dutyOnPremium = Math.round(basePremium * dutyRate * 100) / 100;
-  const lmi = Math.round(basePremium + dutyOnPremium);
+  let rate = 0;
+  let basePremium = 0;
 
-  return { lmi, basePremium, dutyOnPremium, rate, lvrPct: Math.round(lvrPct * 100) / 100, warnings };
+  if (lenderId === 'westpac') {
+    rate = _gridRate(loanAmount, lvrPct, WBC_LVR, WBC_LOAN, WBC_RATES);
+    basePremium = loanAmount * (rate / 100);
+  } else if (lenderId === 'sgb') {
+    rate = _gridRate(loanAmount, lvrPct, WBC_LVR, SGB_LOAN, SGB_RATES);
+    basePremium = loanAmount * (rate / 100);
+  } else if (lenderId === 'helia') {
+    rate = _gridRate(loanAmount, lvrPct, HELIA_LVR, HELIA_LOAN, HELIA_RATES);
+    basePremium = loanAmount * (rate / 100);
+    if (isInvestment) basePremium *= HELIA_INVESTMENT_LOADER;
+    basePremium = Math.max(basePremium, HELIA_MIN_PREMIUM);
+  } else if (lenderId === 'cba') {
+    rate = _cbaBaseRate(lvrPct) * _cbaLoanMultiplier(loanAmount);
+    basePremium = loanAmount * (rate / 100);
+    if (isInvestment) basePremium *= CBA_INVESTMENT_LOADING;
+    const minPrem = loanAmount <= 500000 ? CBA_MIN_PREMIUM_LOW : CBA_MIN_PREMIUM_HIGH;
+    basePremium = Math.max(basePremium, minPrem);
+  }
+
+  basePremium = Math.round(basePremium * 100) / 100;
+  const { dutyOnPremium, total } = _applyStamp(basePremium, stateCode);
+
+  return { lmi: total, basePremium, dutyOnPremium, rate, lvrPct: Math.round(lvrPct * 100) / 100, warnings };
 }
 
 // ── Repayment ────────────────────────────────────────────────────────────────

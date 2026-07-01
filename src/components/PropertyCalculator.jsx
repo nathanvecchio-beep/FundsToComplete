@@ -6,6 +6,7 @@ import {
   calculateTransferFee,
   calculateMortgageRegistration,
   calculateLMI,
+  LMI_LENDERS,
 } from '../utils/calculations';
 
 const STATES = ['New South Wales','Victoria','Queensland','South Australia','Western Australia','Australian Capital Territory','Northern Territory','Tasmania'];
@@ -203,6 +204,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [capLMI, setCapLMI] = useState(true);
   const [overrideLMI, setOverrideLMI] = useState(false);
   const [lmiManualAmt, setLmiManualAmt] = useState(0);
+  const [lmiLender, setLmiLender] = useState('helia');
 
   // ── Breakdown ────────────────────────────────────────────────────────────
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -287,7 +289,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
       for (let i = 0; i < 5; i++) {
         const mortRegEst = calculateMortgageRegistration(stateCode, est);
         const totalGovtEst = govtChargesOn ? (netStampDuty + transferFee + mortRegEst) : 0;
-        const lmiEst = overrideLMI ? Number(lmiManualAmt) : calculateLMI(est, pv, lmiWaived, stateCode).lmi;
+        const lmiEst = overrideLMI ? Number(lmiManualAmt) : calculateLMI(est, pv, lmiWaived, stateCode, lmiLender, purpose === 'Investment').lmi;
         const next = Math.max(0, Math.round(
           capLMI
             ? pv + totalGovtEst + fees - D - lmiEst
@@ -308,7 +310,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     const mortgageReg = calculateMortgageRegistration(stateCode, rawBaseLoan || pv);
     const totalGovt = govtChargesOn ? (netStampDuty + transferFee + mortgageReg) : 0;
 
-    const lmiResult = calculateLMI(rawBaseLoan, pv, lmiWaived, stateCode);
+    const lmiResult = calculateLMI(rawBaseLoan, pv, lmiWaived, stateCode, lmiLender, purpose === 'Investment');
     const lmiAuto = lmiResult.lmi;
     const lmi = overrideLMI ? Number(lmiManualAmt) : lmiAuto;
     const capitalisedLmi = capLMI ? lmi : 0;
@@ -341,7 +343,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
     useDetailedFees, conveyancerFee, bankFee, buildingInspection, pestInspection, otherFees,
     includeRates, ratesAmount,
     includeFhog, fhogOverride, fhogManual, autoFhog,
-    capLMI, overrideLMI, lmiManualAmt, lmiWaived,
+    capLMI, overrideLMI, lmiManualAmt, lmiWaived, lmiLender,
   ]);
 
   const { pv, baseLvr, baseLvrCalc, rawBaseLoan, totalLoan, totalLvr,
@@ -623,6 +625,59 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
                   <button className="fsc-add-item-btn fsc-add-fund-btn" onClick={addExtraFund}>
                     <span className="fsc-add-item-plus">+</span> Fund
                   </button>
+
+                  {/* LMI block — only shown when LMI applies */}
+                  {lmiActive && pv > 0 && (
+                    <div className="fsc-lmi-block">
+                      <div className="fsc-lmi-header">
+                        <div className="fsc-lmi-title">
+                          <span className="fsc-lmi-icon">!</span>
+                          Lenders Mortgage Insurance
+                        </div>
+                        <div className="fsc-lmi-header-amt">{fmt(lmi)}</div>
+                      </div>
+                      <div className="fsc-lmi-body">
+                        <div className="fsc-lmi-lender-row">
+                          <span className="fsc-lmi-lender-label">Lender</span>
+                          <select
+                            className="fsc-lmi-lender-select"
+                            value={lmiLender}
+                            onChange={e => setLmiLender(e.target.value)}
+                          >
+                            {LMI_LENDERS.map(l => (
+                              <option key={l.id} value={l.id}>{l.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="fsc-lmi-cap-row">
+                          <div className="fsc-lmi-cap-text">
+                            <span className="fsc-lmi-cap-label">Capitalise into loan</span>
+                            <span className="fsc-lmi-cap-sub">Adds {fmt(lmi)} to the loan amount</span>
+                          </div>
+                          <Toggle checked={capLMI} onChange={setCapLMI} />
+                        </div>
+                        <div className="fsc-lmi-scenarios">
+                          <div className={`fsc-lmi-scenario ${capLMI ? 'fsc-lmi-scenario-active' : 'fsc-lmi-scenario-inactive'}`}>
+                            <div className="fsc-lmi-scenario-tag">{capLMI ? '✓ Selected' : 'Alternative'}</div>
+                            <div className="fsc-lmi-scenario-name">Capitalised into Loan</div>
+                            <div className="fsc-lmi-scenario-row"><span>Base loan</span><span>{fmt(rawBaseLoan)}</span></div>
+                            <div className="fsc-lmi-scenario-row"><span>+ LMI premium</span><span>{fmt(lmi)}</span></div>
+                            <div className="fsc-lmi-scenario-total"><span>Total loan</span><span>{fmt(rawBaseLoan + lmi)}</span></div>
+                          </div>
+                          <div className={`fsc-lmi-scenario ${!capLMI ? 'fsc-lmi-scenario-active' : 'fsc-lmi-scenario-inactive'}`}>
+                            <div className="fsc-lmi-scenario-tag">{!capLMI ? '✓ Selected' : 'Alternative'}</div>
+                            <div className="fsc-lmi-scenario-name">Paid Upfront (cash)</div>
+                            <div className="fsc-lmi-scenario-row"><span>Loan stays</span><span>{fmt(rawBaseLoan)}</span></div>
+                            <div className="fsc-lmi-scenario-row"><span>Cash needed</span><span>{fmt(lmi)}</span></div>
+                            <div className="fsc-lmi-scenario-total"><span>Total loan</span><span>{fmt(rawBaseLoan)}</span></div>
+                          </div>
+                        </div>
+                        {!LMI_LENDERS.find(l => l.id === lmiLender)?.verified && (
+                          <div className="fsc-lmi-disclaimer">Modelled / indicative — confirm with lender before relying on this figure.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="fsc-total"><span>Total Available</span><span>{fmt(totalAvailable)}</span></div>
                 </div>
