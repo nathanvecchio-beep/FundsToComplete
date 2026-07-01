@@ -505,7 +505,7 @@ export const LMI_LENDERS = [
   { id: 'cba',      label: 'CBA (modelled)',                    verified: false },
 ];
 
-export function calculateLMI(loanAmount, propertyValue, lmiWaived, stateCode = 'NSW', lenderId = 'helia', isInvestment = false) {
+export function calculateLMI(loanAmount, propertyValue, lmiWaived, stateCode = 'NSW', lenderId = 'westpac', isInvestment = false) {
   const zero = { lmi: 0, basePremium: 0, dutyOnPremium: 0, rate: 0, warnings: [], lvrPct: 0 };
   if (lmiWaived || !loanAmount || !propertyValue) return zero;
 

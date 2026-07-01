@@ -204,7 +204,7 @@ export default function PropertyCalculator({ propIndex, label, onSummaryUpdate, 
   const [capLMI, setCapLMI] = useState(true);
   const [overrideLMI, setOverrideLMI] = useState(false);
   const [lmiManualAmt, setLmiManualAmt] = useState(0);
-  const [lmiLender, setLmiLender] = useState('helia');
+  const [lmiLender, setLmiLender] = useState('westpac');
 
   // ── Breakdown ────────────────────────────────────────────────────────────
   const [showBreakdown, setShowBreakdown] = useState(false);
